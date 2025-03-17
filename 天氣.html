@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>天氣狀況查詢</title>
+</head>
+<body>
+  <h1>天氣狀況</h1>
+  <p id="weather">讀取中...</p>
+  <p id="rain-reminder">讀取中...</p>
+  
+  <script>
+    const weatherUrl = "https://opendata.cwa.gov.tw/api/v1/rest/datastore/O-A0003-001?Authorization=CWA-F5269C99-76E7-4501-9A20-73782145C9CE&format=JSON&StationName=%E8%87%BA%E4%B8%AD&WeatherElement=Weather";
+    const rainUrl = "https://opendata.cwa.gov.tw/api/v1/rest/datastore/F-C0032-001?Authorization=CWA-F5269C99-76E7-4501-9A20-73782145C9CE&locationName=%E8%87%BA%E4%B8%AD%E5%B8%82&elementName=Wx";
+
+    // 獲取天氣狀況
+    fetch(weatherUrl)
+      .then(response => response.json())
+      .then(data => {
+        //console.log(data); // 打印完整的 data 物件到控制台
+        const weather = data.records.Station[0].WeatherElement.Weather;
+        document.getElementById('weather').textContent = "天氣狀況：" + weather;
+      })
+      .catch(error => {
+        console.error("發生錯誤:", error);
+        document.getElementById('weather').textContent = "無法取得天氣資訊";
+      });
+
+    // 獲取是否需要帶雨具
+    fetch(rainUrl)
+      .then(response => response.json())
+      .then(data => {
+        const weatherElements = data.records.location[0].weatherElement[0].time;
+        const firstWeather = weatherElements[0].parameter.parameterName;
+        const secondWeather = weatherElements[1].parameter.parameterName;
+
+        // 判斷是否需要提醒帶雨具
+        if (firstWeather.includes("雨") || secondWeather.includes("雨")) {
+          document.getElementById('rain-reminder').textContent = "記得帶雨具";
+        } else {
+          document.getElementById('rain-reminder').textContent = "不需要帶雨具";
+        }
+      })
+      .catch(error => {
+        console.error("發生錯誤:", error);
+        document.getElementById('rain-reminder').textContent = "無法取得雨具資訊";
+      });
+  </script>
+</body>
+</html>
