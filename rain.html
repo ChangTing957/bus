@@ -2,9 +2,10 @@
 <html lang="zh-Hant">
 <head>
   <meta charset="UTF-8">
-  <title>Rain Effect</title>
+  <title>Rain Effect - Modified</title>
   <style>
     /* ---------- CSS 開始 ---------- */
+
     html {
       height: 100%;
     }
@@ -13,7 +14,10 @@
       height: 100%;
       margin: 0;
       overflow: hidden;
-      background: linear-gradient(to bottom, #202020, #111119);
+      /* 原本是 background: linear-gradient(...) 
+         現在改成 none，隱藏背景漸層 */
+      background: BLACK;
+      /* 預設就帶有 back-row-toggle，但不帶 splat-toggle、single-toggle */
     }
 
     .rain {
@@ -31,6 +35,7 @@
       opacity: 0.5;
     }
 
+    /* 預設 body 有 back-row-toggle => 顯示 back-row */
     body.back-row-toggle .rain.back-row {
       display: block;
     }
@@ -87,9 +92,10 @@
       opacity: 1;
       transform: scale(0);
       animation: splat 0.5s linear infinite;
-      display: none;
+      display: none; /* 預設隱藏 */
     }
 
+    /* body.splat-toggle => 才會顯示 splat */
     body.splat-toggle .splat {
       display: block;
     }
@@ -113,7 +119,9 @@
       }
     }
 
+    /* 隱藏原本的按鈕容器 */
     .toggles {
+      display: none; /* 直接用 display: none; 隱藏左側三個toggle */
       position: absolute;
       top: 0;
       left: 0;
@@ -164,6 +172,7 @@
       top: 160px;
     }
 
+    /* 關閉 SINGLE => 讓 .drop 預設都顯示 */
     body.single-toggle .drop {
       display: none;
     }
@@ -172,13 +181,18 @@
       display: block;
     }
 
-    /* 雲雨退出動畫: 直接使用 display: none 來隱藏 */
   </style>
 </head>
-<body class="back-row-toggle splat-toggle">
+
+<!-- 預設 body 帶 back-row-toggle (開啟 BACK ROW) 
+     移除 splat-toggle (關閉 SPLAT)
+     移除 single-toggle (關閉 SINGLE) -->
+<body class="back-row-toggle">
   <!-- check the Comments for more info -->
   <div class="rain front-row"></div>
   <div class="rain back-row"></div>
+
+  <!-- 這裡是原本的toggle，但我們用 display: none; 隱藏 -->
   <div class="toggles">
     <div class="splat-toggle toggle active">SPLAT</div>
     <div class="back-row-toggle toggle active">BACK<br>ROW</div>
@@ -189,6 +203,7 @@
   <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
   <script>
     // ---------- JS 開始 ----------
+
     var makeItRain = function() {
       //clear out everything
       $('.rain').empty();
@@ -198,14 +213,10 @@
       var backDrops = "";
 
       while (increment < 100) {
-        //random number between 98 and 1
         var randoHundo = (Math.floor(Math.random() * (98 - 1 + 1) + 1));
-        //random number between 5 and 2
         var randoFiver = (Math.floor(Math.random() * (5 - 2 + 1) + 2));
-        //increment
         increment += randoFiver;
 
-        //front drops
         drops += '<div class="drop" style="left: ' + increment + '%; bottom: ' 
           + (randoFiver + randoFiver - 1 + 100) + '%; animation-delay: 0.' 
           + randoHundo + 's; animation-duration: 0.5' + randoHundo + 's;">'
@@ -215,7 +226,6 @@
           + 's; animation-duration: 0.5' + randoHundo + 's;"></div>'
           + '</div>';
 
-        //back drops
         backDrops += '<div class="drop" style="right: ' + increment + '%; bottom: ' 
           + (randoFiver + randoFiver - 1 + 100) + '%; animation-delay: 0.' 
           + randoHundo + 's; animation-duration: 0.5' + randoHundo + 's;">'
@@ -230,21 +240,20 @@
       $('.rain.back-row').append(backDrops);
     };
 
-    // Toggle "SPLAT" button
+    // 原本的三個toggle事件都保留，但因為 .toggles 已經 display:none，
+    // 所以使用者看不到按鈕，也無法點擊
     $('.splat-toggle.toggle').on('click', function() {
       $('body').toggleClass('splat-toggle');
       $(this).toggleClass('active');
       makeItRain();
     });
 
-    // Toggle "BACK ROW" button
     $('.back-row-toggle.toggle').on('click', function() {
       $('body').toggleClass('back-row-toggle');
       $(this).toggleClass('active');
       makeItRain();
     });
 
-    // Toggle "SINGLE" button
     $('.single-toggle.toggle').on('click', function() {
       $('body').toggleClass('single-toggle');
       $(this).toggleClass('active');

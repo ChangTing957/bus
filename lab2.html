@@ -2,16 +2,20 @@
 <html lang="zh-Hant">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>動態天氣背景</title>
+  <title>動態天氣背景 + 雨滴效果</title>
   <style>
+
+    #canvas {
+      display: block;
+    }
+    /* --- 原本的 CSS --- */
     body, html {
       margin: 0;
       padding: 0;
       width: 100%;
       height: 100%;
       overflow: hidden;
-      transition: background-color 1s linear;
+      transition: background 1s linear;
       position: relative;
     }
     #controls {
@@ -33,45 +37,34 @@
       transition: filter 1s linear, fill 1s linear; /* 雲/太陽的過渡效果 */
     }
 
-    /* --- 雲朵進場動畫 (原本就有) --- */
     .cloud1, .cloud2, .cloud3, .cloud4, .cloud5 {
       animation: slideInRight 1s forwards;
     }
     .cloud6, .cloud7, .cloud8, .cloud9, .cloud10 {
       animation: slideInLeft 1s forwards;
     }
-
-    /* --- 太陽進場 (原本就有) --- */
     .sun {
       animation: slideInDown 1s forwards;
     }
 
-    /* --- 雲朵退出動畫 (新增) --- */
     .cloudExitRight {
       animation: slideOutRight 1s forwards;
     }
     .cloudExitLeft {
       animation: slideOutLeft 1s forwards;
     }
-
-    /* --- 太陽往上飄走 (原本已有 slideInDown, 這裡新增 slideOutUp) --- */
     @keyframes slideOutUp {
       from { transform: translate(-50%, 0); }
-      to   { transform: translate(-50%, -150%); } /* 往上飛出畫面 */
+      to   { transform: translate(-50%, -150%); }
     }
-
-    /* --- 雲朵往右飄走 --- */
     @keyframes slideOutRight {
       from { transform: translateX(0); }
       to   { transform: translateX(200%); }
     }
-    /* --- 雲朵往左飄走 --- */
     @keyframes slideOutLeft {
       from { transform: translateX(0); }
       to   { transform: translateX(-200%); }
     }
-
-    /* --- 原本雲朵進場動畫 --- */
     @keyframes slideInRight {
       from { transform: translateX(100%); }
       to   { transform: translateX(0); }
@@ -85,54 +78,136 @@
       to   { transform: translate(-50%, 0); }
     }
 
-    /* --- 定位設定 (不變) --- */
+    /* 雲朵定位 */
     .cloud1 {
       top: -120px; right: -100px;
-      width: 600px; height: auto; z-index: 1;
+      width: 600px; height: auto; z-index: 2;
     }
     .cloud2 {
       top: 30px; right: 0px;
-      width: 300px; height: auto; z-index: 2;
+      width: 300px; height: auto; z-index: 3;
     }
     .cloud3 {
       top: 100px; right: 350px;
-      width: 300px; height: auto; z-index: 3;
+      width: 300px; height: auto; z-index: 4;
       transform: scaleX(-1);
     }
     .cloud4 {
       top: -20px; right: 300px;
-      width: 200px; height: auto; z-index: 2;
+      width: 200px; height: auto; z-index: 3;
       transform: scaleX(-1);
     }
     .cloud5 {
       top: -80px; right: 350px;
-      width: 400px; height: auto; z-index: 1;
+      width: 400px; height: auto; z-index: 2;
     }
     .cloud6 {
       top: -100px; left: -150px;
-      width: 700px; height: auto; z-index: 1;
+      width: 700px; height: auto; z-index: 2;
     }
     .cloud7 {
       top: 80px; left: 30px;
-      width: 300px; height: auto; z-index: 2;
+      width: 300px; height: auto; z-index: 3;
       transform: scaleX(-1);
     }
     .cloud8 {
       top: -150px; left: 300px;
-      width: 500px; height: auto; z-index: 1;
+      width: 500px; height: auto; z-index: 2;
     }
     .cloud9 {
       top: -50px; left: 700px;
-      width: 300px; height: auto; z-index: 2;
+      width: 300px; height: auto; z-index: 3;
     }
     .cloud10 {
       top: 0px; left: 400px;
-      width: 500px; height: auto; z-index: 1;
+      width: 500px; height: auto; z-index: 2;
       transform: scaleX(-1);
     }
     .sun {
       top: 50px; left: 50%;
-      width: 200px; height: auto; z-index: 1;
+      width: 200px; height: auto; z-index: 2;
+    }
+
+    /* --- 以下為「雨滴效果」相關 CSS --- */
+    .rain {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 0; /* 雨在最底層，雲在上面 */
+      display: none; /* 預設隱藏，只有天氣包含「雨」時才顯示 */
+    }
+
+    .drop {
+      position: absolute;
+      bottom: 100%;
+      width: 15px;
+      height: 120px;
+      pointer-events: none;
+      animation: drop 0.5s linear infinite;
+    }
+    @keyframes drop {
+      0% {
+        transform: translateY(0vh);
+      }
+      75% {
+        transform: translateY(90vh);
+      }
+      100% {
+        transform: translateY(90vh);
+      }
+    }
+
+    .stem {
+      width: 1px;
+      height: 60%;
+      margin-left: 7px;
+      background: linear-gradient(to bottom, rgba(255, 255, 255, 0), rgba(255, 255, 255, 0.25));
+      animation: stem 0.5s linear infinite;
+    }
+    @keyframes stem {
+      0% {
+        opacity: 1;
+      }
+      65% {
+        opacity: 1;
+      }
+      75% {
+        opacity: 0;
+      }
+      100% {
+        opacity: 0;
+      }
+    }
+
+    .splat {
+      width: 15px;
+      height: 10px;
+      border-top: 2px dotted rgba(255, 255, 255, 0.5);
+      border-radius: 50%;
+      opacity: 1;
+      transform: scale(0);
+      animation: splat 0.5s linear infinite;
+      display: none;
+    }
+    @keyframes splat {
+      0% {
+        opacity: 1;
+        transform: scale(0);
+      }
+      80% {
+        opacity: 1;
+        transform: scale(0);
+      }
+      90% {
+        opacity: 0.5;
+        transform: scale(1);
+      }
+      100% {
+        opacity: 0;
+        transform: scale(1.5);
+      }
     }
   </style>
 </head>
@@ -169,7 +244,190 @@
   <img src="image/svg3.svg" alt="Cloud 10" class="cloud cloud10">
   <img src="image/sun.svg" alt="Sun" class="sun">
 
+  <!-- 雨容器 (在雲的後面, z-index=0) -->
+  <canvas id="canvas"></canvas>
+  <div class="rain front-row"></div>
+  <div class="rain back-row"></div>
+
+  <!-- 引入 jQuery (CDN) -->
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
   <script>
+
+     // 取得 canvas 與 2D context
+     var canvas  = document.getElementById("canvas");
+    var context = canvas.getContext("2d");
+
+    // 設定畫布相關參數
+    var width  = 0.0;
+    var height = 0.0;
+    var scale  = 1.0;
+
+    // FPS 與前一禎的時間
+    var fps       = 45.0;
+    var lastFrame = (new Date()).getTime();
+
+    // 螢幕閃光與閃電參數
+    var flashOpacity       = 0.0;
+    var boltFlashDuration  = 0.25;
+    var boltFadeDuration   = 0.5;
+    var totalBoltDuration  = boltFlashDuration + boltFadeDuration;
+
+    // 儲存所有閃電
+    var bolts = [];
+
+    // 調整畫布大小
+    function setCanvasSize() {
+      canvas.width  = window.innerWidth;
+      canvas.height = window.innerHeight;
+
+      // 同步更新所有 bolt canvas 的尺寸
+      for (var i = 0; i < bolts.length; i++) {
+        var b = bolts[i];
+        b.canvas.width  = window.innerWidth;
+        b.canvas.height = window.innerHeight;
+      }
+
+      width  = Math.ceil(window.innerWidth  / scale);
+      height = Math.ceil(window.innerHeight / scale);
+    }
+
+    // 發射閃電
+    function launchBolt(x, y, length, direction) {
+      // 螢幕閃爍
+      flashOpacity = Math.random() * 0.1;
+
+      // 建立一個 canvas 來繪製閃電
+      var boltCanvas = document.createElement("canvas");
+      boltCanvas.width  = window.innerWidth;
+      boltCanvas.height = window.innerHeight;
+
+      var boltContext = boltCanvas.getContext("2d");
+      boltContext.scale(scale, scale);
+
+      // 推進 bolts 陣列
+      bolts.push({ canvas: boltCanvas, duration: 0.0 });
+
+      // 真正開始畫閃電
+      recursiveLaunchBolt(x, y, length, direction, boltContext);
+    }
+
+    // 遞迴畫閃電
+    function recursiveLaunchBolt(x, y, length, direction, boltContext) {
+      var originalDirection = direction;
+
+      // 透過 setInterval 逐步畫出閃電
+      var boltInterval = setInterval(function() {
+        if (length <= 0) {
+          clearInterval(boltInterval);
+          return;
+        }
+
+        var steps = 0;
+        // 一次畫一小段
+        while (steps++ < Math.floor(45 / scale) && length > 0) {
+          var x1 = Math.floor(x);
+          var y1 = Math.floor(y);
+
+          x += Math.cos(direction);
+          y -= Math.sin(direction);
+          length--;
+
+          if (x1 !== Math.floor(x) || y1 !== Math.floor(y)) {
+            var alpha = Math.min(1.0, length / 350.0);
+            boltContext.fillStyle = "rgba(255, 255, 255, " + alpha + ")";
+            boltContext.fillRect(x1, y1, 1.0, 1.0);
+
+            // 小幅度偏移，讓閃電分支
+            direction = originalDirection + (-Math.PI / 8.0 + Math.random() * (Math.PI / 4.0));
+
+            // 分支 or 重新launch
+            if (Math.random() > 0.98) {
+              // 新的分支
+              recursiveLaunchBolt(
+                x1, y1,
+                length * (0.3 + Math.random() * 0.4),
+                originalDirection + (-Math.PI / 6.0 + Math.random() * (Math.PI / 3.0)),
+                boltContext
+              );
+            } else if (Math.random() > 0.95) {
+              recursiveLaunchBolt(
+                x1, y1,
+                length,
+                originalDirection + (-Math.PI / 6.0 + Math.random() * (Math.PI / 3.0)),
+                boltContext
+              );
+              length = 0;
+            }
+          }
+        }
+      }, 10);
+    }
+
+    // 每禎都會執行
+    function tick() {
+      var frame   = (new Date()).getTime();
+      var elapsed = (frame - lastFrame) / 1000.0;
+      lastFrame   = frame;
+
+      // 清空畫布
+      context.clearRect(0, 0, window.innerWidth, window.innerHeight);
+
+      // 隨機機率產生閃電
+      if (Math.random() > 0.98) {
+        var x = Math.floor(-10.0 + Math.random() * (width + 20.0));
+        var y = Math.floor(5.0 + Math.random() * (height / 3.0));
+        var length = Math.floor(height / 2.0 + Math.random() * (height / 3.0));
+        launchBolt(x, y, length, Math.PI * 3.0 / 2.0);
+      }
+
+      // 螢幕閃光
+      if (flashOpacity > 0.0) {
+        context.fillStyle = "rgba(255, 255, 255, " + flashOpacity + ")";
+        context.fillRect(0, 0, window.innerWidth, window.innerHeight);
+        flashOpacity = Math.max(0.0, flashOpacity - 0.5 * elapsed);
+      }
+
+      // 繪製所有閃電
+      for (var i = 0; i < bolts.length; i++) {
+        var bolt = bolts[i];
+        bolt.duration += elapsed;
+
+        if (bolt.duration >= totalBoltDuration) {
+          // 閃電時間到，移除
+          bolts.splice(i, 1);
+          i--;
+          continue;
+        }
+
+        // 計算閃電 fade out 程度
+        var fadeRatio = (totalBoltDuration - bolt.duration) / boltFadeDuration;
+        context.globalAlpha = Math.max(0.0, Math.min(1.0, fadeRatio));
+
+        context.drawImage(bolt.canvas, 0, 0);
+      }
+    }
+
+    // 初始化
+    window.addEventListener("resize", setCanvasSize);
+    function setCanvasSize() {
+      canvas.width  = window.innerWidth;
+      canvas.height = window.innerHeight;
+
+      // 同步更新 bolts
+      for (var i = 0; i < bolts.length; i++) {
+        bolts[i].canvas.width  = window.innerWidth;
+        bolts[i].canvas.height = window.innerHeight;
+      }
+
+      width  = Math.ceil(window.innerWidth  / scale);
+      height = Math.ceil(window.innerHeight / scale);
+    }
+
+    setCanvasSize();
+    setInterval(tick, 1000.0 / fps);
+    /* ============================
+       1. 原本的 lab2 JS 邏輯
+       ============================ */
     const body = document.body;
     const weatherSelect = document.getElementById('weather');
     const timeSlider = document.getElementById('time');
@@ -181,7 +439,6 @@
     let acceleratedTime = false;
     let currentHour = parseInt(timeSlider.value);
 
-    // 背景顏色 (清晨/白天/黃昏/夜晚)
     const weatherColors = {
       '晴': ['#6C8EBF', '#87CEEB', '#FF7F50', '#483D8B'],
       '多雲': ['#6C8EBF', '#87CEEB', '#DB714B', '#483D8B'],
@@ -192,48 +449,81 @@
       '無法取得天氣資料': ['#f0f0f0', '#f0f0f0', '#f0f0f0', '#f0f0f0']
     };
 
-    // 雲朵亮度：根據小時段設定
+    function parseColor(hex) {
+      // 移除 #，轉大寫
+      hex = hex.replace('#','');
+      if (hex.length === 3) {
+        // 簡寫 #abc => #aabbcc
+        hex = hex[0]+hex[0]+hex[1]+hex[1]+hex[2]+hex[2];
+      }
+      const r = parseInt(hex.substring(0,2), 16);
+      const g = parseInt(hex.substring(2,4), 16);
+      const b = parseInt(hex.substring(4,6), 16);
+      return { r, g, b };
+    }
+
+    // 亮/暗處理 => amt >0 => 變亮, <0 => 變暗
+    function lightenOrDarken({r,g,b}, amt) {
+      // clamp => 0~255
+      const nr = Math.min(255, Math.max(0, r + amt));
+      const ng = Math.min(255, Math.max(0, g + amt));
+      const nb = Math.min(255, Math.max(0, b + amt));
+      // 回成 #RRGGBB
+      return '#' + nr.toString(16).padStart(2,'0')
+                   + ng.toString(16).padStart(2,'0')
+                   + nb.toString(16).padStart(2,'0');
+    }
+
+    // 建立漸層: top(稍微亮一些) => bottom(原色或稍暗)
+    // 這裡 amt = 30 => 代表 top 亮 30, bottom 暗 30
+    // 你可依需求微調
+    function makeGradient(baseColor) {
+      const c = parseColor(baseColor);
+      const topColor = lightenOrDarken(c, 40);   // 上方比較亮
+      const bottomColor = lightenOrDarken(c, -40); // 下方比較暗
+      return `linear-gradient(to bottom, ${topColor}, ${bottomColor})`;
+    }
+
     function getCloudBrightness(hour) {
       if (hour >= 5 && hour < 7) {
-        return 0.8;  // 清晨
+        return 0.8;
       } else if (hour >= 7 && hour < 16) {
-        return 1.0;  // 白天
+        return 1.0;
       } else if (hour >= 16 && hour < 19) {
-        return 0.8;  // 黃昏
+        return 0.8;
       } else {
-        return 0.6;  // 夜晚
+        return 0.6;
       }
     }
 
-    // 雲朵 filter：
-    // - 「陰」=> 灰階
-    // - 「多雲」=> 帶一點橘，但比較淡 (sepia + brightness + saturate)
-        // - 其他 => 只用 brightness
-        function getCloudFilter(weather, hour) {
-            const brightness = getCloudBrightness(hour);
-            const base = 'drop-shadow(0 0 5px rgba(0,0,0,0.5))';
-
-            if (weather.includes('陰')) {
-                return `${base} grayscale(100%) brightness(${brightness})`;
-            } else if (weather === '多雲') {
-                if (hour >= 16 && hour < 19) {
-                    // 黃昏時段，雲變橘色
-                    return `${base} sepia(1) hue-rotate(-30deg) brightness(${brightness}) saturate(5)`;
-                } else {
-                    // 其他時段，雲保持正常顏色
-                    return `${base} brightness(${brightness})`;
-                }
+    function getCloudFilter(weather, hour) {
+      const brightness = getCloudBrightness(hour);
+      const base = 'drop-shadow(0 0 5px rgba(0,0,0,0.5))';
+        if (weather.includes('陰')) {
+            let factor = 0.4;
+            if (hour >= 7 && hour < 16) {
+                factor = 0.5; // 白天陰天稍微亮一點
             } else {
-                // 晴 or 其他 => 只做時段亮度
-                return `${base} brightness(${brightness})`;
+                factor = 0.3; // 晚上更暗
             }
+            return `${base} grayscale(100%) brightness(${factor})`;
+      } else if (weather === '多雲') {
+        if (hour >= 16 && hour < 19) {
+          // 黃昏
+          return `${base} sepia(1) hue-rotate(-30deg) brightness(${brightness}) saturate(5)`;
+        } else {
+          return `${base} brightness(${brightness})`;
         }
+      } else {
+        // 晴 or 其他
+        return `${base} brightness(${brightness})`;
+      }
+    }
 
     function updateBackground() {
       const weather = weatherSelect.value;
       const colors = weatherColors[weather] || weatherColors['無法取得天氣資料'];
 
-      // 依 currentHour 選擇背景色
       let color;
       if (currentHour >= 5 && currentHour < 7) {
         color = colors[0]; // 清晨
@@ -244,13 +534,12 @@
       } else {
         color = colors[3]; // 夜晚
       }
-      body.style.backgroundColor = color;
+      body.style.background = makeGradient(color);
 
-      // (1) 雲朵顯示或退出螢幕
+      // 雲朵顯示/退出
       if (weather.includes('雲') || weather.includes('陰')) {
-        // 有雲 → 進場
+        // 顯示雲
         clouds.forEach((cloud, i) => {
-          // 先取消退出動畫
           if (i < 5) {
             cloud.classList.remove('cloudExitRight');
             cloud.classList.add('slideInRight');
@@ -258,35 +547,29 @@
             cloud.classList.remove('cloudExitLeft');
             cloud.classList.add('slideInLeft');
           }
-          // 顯示 & 設定 filter
           cloud.style.display = 'block';
           cloud.style.filter = getCloudFilter(weather, currentHour);
         });
       } else {
-        // 沒有雲 → 雲退出
+        // 隱藏雲
         clouds.forEach((cloud, i) => {
-          // 取消進場動畫
-          cloud.classList.remove('slideInRight', 'slideInLeft');
-          // 加上退出動畫
+          cloud.classList.remove('slideInRight','slideInLeft');
           if (i < 5) {
             cloud.classList.add('cloudExitRight');
           } else {
             cloud.classList.add('cloudExitLeft');
           }
-          // 1秒後隱藏
           setTimeout(() => {
             cloud.style.display = 'none';
           }, 1000);
         });
       }
 
-      // (2) 太陽顯示/隱藏
-      // 白天(7~19) && 天氣=晴 => slideInDown；否則 => slideOutUp
+      // 太陽顯示/隱藏
       if (currentHour >= 7 && currentHour < 19 && weather === '晴') {
         sun.style.display = 'block';
         sun.style.animation = 'slideInDown 1s forwards';
       } else {
-        // 晚上或非晴天 => 往上飄出畫面
         sun.style.animation = 'slideOutUp 1s forwards';
         setTimeout(() => {
           if (!(currentHour >= 7 && currentHour < 19 && weather === '晴')) {
@@ -294,13 +577,27 @@
           }
         }, 1000);
       }
+
+      // 雨滴顯示/隱藏
+      if (weather.includes('雨')) {
+        // 顯示 rain
+        document.querySelectorAll('.rain').forEach(r => {
+          r.style.display = 'block';
+        });
+        makeItRain();
+      } else {
+        // 隱藏 rain
+        document.querySelectorAll('.rain').forEach(r => {
+          r.style.display = 'none';
+          r.innerHTML = ''; // 清空雨滴
+        });
+      }
     }
 
     function updateTimeDisplay() {
       timeDisplay.textContent = `${String(currentHour).padStart(2, '0')}:00`;
     }
 
-    // 監聽事件
     weatherSelect.addEventListener('change', updateBackground);
     timeSlider.addEventListener('input', (e) => {
       currentHour = parseInt(e.target.value);
@@ -312,7 +609,6 @@
       toggleTimeBtn.textContent = acceleratedTime ? '停用時間加速' : '啟用時間加速';
     });
 
-    // 每秒推進 1 小時 (若加速啟用)
     setInterval(() => {
       if (acceleratedTime) {
         currentHour = (currentHour + 1) % 24;
@@ -325,6 +621,50 @@
     // 初始化
     updateTimeDisplay();
     updateBackground();
+
+    /* ============================
+       2. 新增的「雨滴」程式
+       ============================ */
+    function makeItRain() {
+      // 清空現有的雨滴
+      $('.rain').empty();
+
+      let increment = 0;
+      let drops = "";
+      let backDrops = "";
+
+      while (increment < 100) {
+        // random number between 98 and 1
+        let randoHundo = (Math.floor(Math.random() * (98 - 1 + 1) + 1));
+        // random number between 5 and 2
+        let randoFiver = (Math.floor(Math.random() * (5 - 2 + 1) + 2));
+
+        increment += randoFiver;
+
+        // front row
+        drops += '<div class="drop" style="left: ' + increment + '%; bottom: '
+          + (randoFiver + randoFiver - 1 + 100) + '%; animation-delay: 0.'
+          + randoHundo + 's; animation-duration: 0.5' + randoHundo + 's;">'
+          + '<div class="stem" style="animation-delay: 0.' + randoHundo
+          + 's; animation-duration: 0.5' + randoHundo + 's;"></div>'
+          + '<div class="splat" style="animation-delay: 0.' + randoHundo
+          + 's; animation-duration: 0.5' + randoHundo + 's;"></div>'
+          + '</div>';
+
+        // back row
+        backDrops += '<div class="drop" style="right: ' + increment + '%; bottom: '
+          + (randoFiver + randoFiver - 1 + 100) + '%; animation-delay: 0.'
+          + randoHundo + 's; animation-duration: 0.5' + randoHundo + 's;">'
+          + '<div class="stem" style="animation-delay: 0.' + randoHundo
+          + 's; animation-duration: 0.5' + randoHundo + 's;"></div>'
+          + '<div class="splat" style="animation-delay: 0.' + randoHundo
+          + 's; animation-duration: 0.5' + randoHundo + 's;"></div>'
+          + '</div>';
+      }
+
+      $('.rain.front-row').append(drops);
+      $('.rain.back-row').append(backDrops);
+    }
   </script>
 </body>
 </html>
