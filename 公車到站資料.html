@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>大墩公益路口公車到站時間查詢</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; }
+    h1 { color: #333; }
+    #bus-arrival-times { margin-top: 20px; }
+    #raw-json { background: #eee; padding: 10px; margin-top: 20px; }
+  </style>
+</head>
+<body>
+  <h1>大墩公益路口公車到站時間查詢</h1>
+  <ul id="bus-arrival-times"></ul>
+  <pre id="raw-json"></pre>
+
+  <script>
+    // TDX API 金鑰（此處直接寫在前端，僅供測試使用；正式環境建議由後端處理）
+    const clientId = 'niyangex-c9a03f8f-f658-4f40';
+    const clientSecret = 'f0067ed7-d17c-422f-8306-491a54480a14';
+
+    // 取得 TDX API Token
+    async function getAccessToken() {
+      try {
+        const response = await fetch('https://tdx.transportdata.tw/auth/realms/TDXConnect/protocol/openid-connect/token', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body: `grant_type=client_credentials&client_id=${clientId}&client_secret=${clientSecret}`
+        });
+        const data = await response.json();
+        return data.access_token;
+      } catch (error) {
+        console.error("取得 token 時發生錯誤：", error);
+        throw error;
+      }
+    }
+
+    // 取得大墩公益路口站的預估到站時間
+    async function getBusArrivalTimes() {
+      try {
+        const token = await getAccessToken();
+        // 使用 City 版 API 並以 $filter 過濾站牌名稱
+        const url = "https://tdx.transportdata.tw/api/basic/v2/Bus/EstimatedTimeOfArrival/City/Taichung" +
+                    "?$filter=StopName/Zh_tw eq '大墩公益路口'" +
+                    "&$format=JSON";
+        const response = await fetch(url, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const data = await response.json();
+        return data;
+      } catch (error) {
+        console.error("取得公車到站資料時發生錯誤：", error);
+        throw error;
+      }
+    }
+
+    // 將資料顯示在網頁上
+    function displayBusArrivalTimes(busData) {
+      const busList = document.getElementById('bus-arrival-times');
+      busList.innerHTML = ''; // 清空列表
+
+      // 將原始 JSON 也顯示出來，方便除錯
+      document.getElementById('raw-json').textContent = JSON.stringify(busData, null, 2);
+
+      if (Array.isArray(busData) && busData.length > 0) {
+        busData.forEach(bus => {
+          const listItem = document.createElement('li');
+          // 根據資料結構，路線名稱為物件 (例如：bus.RouteName.Zh_tw)
+          const routeName = bus.RouteName && bus.RouteName.Zh_tw ? bus.RouteName.Zh_tw : '未知路線';
+          const estimateTime = bus.EstimateTime;
+          // 如果有預估時間，轉換成分鐘；否則顯示 "尚無預估時間"
+          const arrivalTime = (estimateTime || estimateTime === 0) ? `${Math.floor(estimateTime / 60)} 分鐘後` : '尚無預估時間';
+          listItem.textContent = `路線 ${routeName} - 預計到站時間：${arrivalTime}`;
+          busList.appendChild(listItem);
+        });
+      } else {
+        busList.textContent = "查無資料";
+      }
+    }
+
+    // 初始化函式
+    async function init() {
+      try {
+        const busData = await getBusArrivalTimes();
+        displayBusArrivalTimes(busData);
+      } catch (error) {
+        document.getElementById('bus-arrival-times').textContent = "取得資料失敗，請檢查主控台訊息。";
+      }
+    }
+
+    window.onload = init;
+  </script>
+</body>
+</html>

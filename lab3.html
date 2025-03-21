@@ -1,0 +1,1383 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+
+<head>
+    <meta charset="UTF-8">
+    <title>動態天氣背景 + 雨滴效果</title>
+    <style>
+        #canvas {
+            display: block;
+        }
+
+        /* --- 原本的 CSS --- */
+        body,
+        html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            transition: background 1s linear;
+            position: relative;
+        }
+
+        #controls {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            z-index: 7;
+            background: rgba(255, 255, 255, 0.8);
+            padding: 10px;
+            border-radius: 5px;
+        }
+
+        #controls label,
+        #controls select,
+        #controls input {
+            margin: 5px;
+        }
+
+        .cloud,
+        .sun {
+            position: absolute;
+            filter: drop-shadow(0 0 5px rgba(0, 0, 0, 0.5));
+            transition: filter 1s linear, fill 1s linear;
+            /* 雲/太陽的過渡效果 */
+        }
+
+        .cloud1,
+        .cloud2,
+        .cloud3,
+        .cloud4,
+        .cloud5 {
+            animation: slideInRight 1s forwards;
+        }
+
+        .cloud6,
+        .cloud7,
+        .cloud8,
+        .cloud9,
+        .cloud10 {
+            animation: slideInLeft 1s forwards;
+        }
+
+        .sun {
+            animation: slideInDown 1s forwards;
+        }
+
+        .cloudExitRight {
+            animation: slideOutRight 1s forwards;
+        }
+
+        .cloudExitLeft {
+            animation: slideOutLeft 1s forwards;
+        }
+
+        @keyframes slideOutUp {
+            from {
+                transform: translate(-50%, 0);
+            }
+
+            to {
+                transform: translate(-50%, -150%);
+            }
+        }
+
+        @keyframes slideOutRight {
+            from {
+                transform: translateX(0);
+            }
+
+            to {
+                transform: translateX(200%);
+            }
+        }
+
+        @keyframes slideOutLeft {
+            from {
+                transform: translateX(0);
+            }
+
+            to {
+                transform: translateX(-200%);
+            }
+        }
+
+        @keyframes slideInRight {
+            from {
+                transform: translateX(100%);
+            }
+
+            to {
+                transform: translateX(0);
+            }
+        }
+
+        @keyframes slideInLeft {
+            from {
+                transform: translateX(-100%);
+            }
+
+            to {
+                transform: translateX(0);
+            }
+        }
+
+        @keyframes slideInDown {
+            from {
+                transform: translate(-50%, -100%);
+            }
+
+            to {
+                transform: translate(-50%, 0);
+            }
+        }
+
+        /* 雲朵定位 */
+        .cloud1 {
+            top: -120px;
+            right: -100px;
+            width: 600px;
+            height: auto;
+            z-index: 2;
+        }
+
+        .cloud2 {
+            top: 30px;
+            right: 0px;
+            width: 300px;
+            height: auto;
+            z-index: 3;
+        }
+
+        .cloud3 {
+            top: 100px;
+            right: 350px;
+            width: 300px;
+            height: auto;
+            z-index: 4;
+            transform: scaleX(-1);
+        }
+
+        .cloud4 {
+            top: -20px;
+            right: 300px;
+            width: 200px;
+            height: auto;
+            z-index: 3;
+            transform: scaleX(-1);
+        }
+
+        .cloud5 {
+            top: -80px;
+            right: 350px;
+            width: 400px;
+            height: auto;
+            z-index: 2;
+        }
+
+        .cloud6 {
+            top: -100px;
+            left: -150px;
+            width: 700px;
+            height: auto;
+            z-index: 2;
+        }
+
+        .cloud7 {
+            top: 80px;
+            left: 30px;
+            width: 300px;
+            height: auto;
+            z-index: 3;
+            transform: scaleX(-1);
+        }
+
+        .cloud8 {
+            top: -150px;
+            left: 300px;
+            width: 500px;
+            height: auto;
+            z-index: 2;
+        }
+
+        .cloud9 {
+            top: -50px;
+            left: 700px;
+            width: 300px;
+            height: auto;
+            z-index: 3;
+        }
+
+        .cloud10 {
+            top: 0px;
+            left: 400px;
+            width: 500px;
+            height: auto;
+            z-index: 2;
+            transform: scaleX(-1);
+        }
+
+        .sun {
+            top: 0px;
+            left: 50%;
+            width: 150px;
+            height: auto;
+            z-index: 2;
+        }
+
+        /* --- 以下為「雨滴效果」相關 CSS --- */
+        .rain {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+            /* 雨在最底層，雲在上面 */
+            display: none;
+            /* 預設隱藏，只有天氣包含「雨」時才顯示 */
+        }
+
+        .drop {
+            position: absolute;
+            bottom: 100%;
+            width: 15px;
+            height: 120px;
+            pointer-events: none;
+            animation: drop 0.5s linear infinite;
+        }
+
+        @keyframes drop {
+            0% {
+                transform: translateY(0vh);
+            }
+
+            75% {
+                transform: translateY(90vh);
+            }
+
+            100% {
+                transform: translateY(90vh);
+            }
+        }
+
+        .stem {
+            width: 1px;
+            height: 60%;
+            margin-left: 7px;
+            background: linear-gradient(to bottom, rgba(255, 255, 255, 0), rgba(255, 255, 255, 0.25));
+            animation: stem 0.5s linear infinite;
+        }
+
+        @keyframes stem {
+            0% {
+                opacity: 1;
+            }
+
+            65% {
+                opacity: 1;
+            }
+
+            75% {
+                opacity: 0;
+            }
+
+            100% {
+                opacity: 0;
+            }
+        }
+
+        .splat {
+            width: 15px;
+            height: 10px;
+            border-top: 2px dotted rgba(255, 255, 255, 0.5);
+            border-radius: 50%;
+            opacity: 1;
+            transform: scale(0);
+            animation: splat 0.5s linear infinite;
+            display: none;
+        }
+
+        @keyframes splat {
+            0% {
+                opacity: 1;
+                transform: scale(0);
+            }
+
+            80% {
+                opacity: 1;
+                transform: scale(0);
+            }
+
+            90% {
+                opacity: 0.5;
+                transform: scale(1);
+            }
+
+            100% {
+                opacity: 0;
+                transform: scale(1.5);
+            }
+        }
+
+        /* 這是霧的程式 */
+        .fogwrapper {
+            height: 100%;
+            position: absolute;
+            top: 0;
+            width: 100%;
+            -webkit-filter: blur(1px) grayscale(0.2) saturate(1.2) sepia(0.2);
+            filter: blur(1px) grayscale(0.2) saturate(1.2) sepia(0.2);
+            display: none;
+            /* 預設隱藏 */
+            z-index: 5;
+            /* 在雲層下方，控制面板上方 */
+        }
+
+        #foglayer_01,
+        #foglayer_02,
+        #foglayer_03 {
+            height: 100%;
+            position: absolute;
+            width: 200%;
+        }
+
+        #foglayer_01 .image01,
+        #foglayer_01 .image02,
+        #foglayer_02 .image01,
+        #foglayer_02 .image02,
+        #foglayer_03 .image01,
+        #foglayer_03 .image02 {
+            float: left;
+            height: 100%;
+            width: 50%;
+        }
+
+        /* 霧層動畫 */
+        #foglayer_01 {
+            animation: foglayer_01_opacity 10s linear infinite, foglayer_moveme 15s linear infinite;
+        }
+
+        #foglayer_02,
+        #foglayer_03 {
+            animation: foglayer_02_opacity 21s linear infinite, foglayer_moveme 13s linear infinite;
+        }
+
+        /* 霧層關鍵影格 */
+        @-webkit-keyframes foglayer_01_opacity {
+            0% {
+                opacity: .1;
+            }
+
+            22% {
+                opacity: .5;
+            }
+
+            40% {
+                opacity: .28;
+            }
+
+            58% {
+                opacity: .4;
+            }
+
+            80% {
+                opacity: .16;
+            }
+
+            100% {
+                opacity: .1;
+            }
+        }
+
+        @-moz-keyframes foglayer_01_opacity {
+            0% {
+                opacity: .1;
+            }
+
+            22% {
+                opacity: .5;
+            }
+
+            40% {
+                opacity: .28;
+            }
+
+            58% {
+                opacity: .4;
+            }
+
+            80% {
+                opacity: .16;
+            }
+
+            100% {
+                opacity: .1;
+            }
+        }
+
+        @-o-keyframes foglayer_01_opacity {
+            0% {
+                opacity: .1;
+            }
+
+            22% {
+                opacity: .5;
+            }
+
+            40% {
+                opacity: .28;
+            }
+
+            58% {
+                opacity: .4;
+            }
+
+            80% {
+                opacity: .16;
+            }
+
+            100% {
+                opacity: .1;
+            }
+        }
+
+        @keyframes foglayer_01_opacity {
+            0% {
+                opacity: .1;
+            }
+
+            22% {
+                opacity: .5;
+            }
+
+            40% {
+                opacity: .28;
+            }
+
+            58% {
+                opacity: .4;
+            }
+
+            80% {
+                opacity: .16;
+            }
+
+            100% {
+                opacity: .1;
+            }
+        }
+
+        /* ---------- Keyframe Layer 2 ---------- */
+        @-webkit-keyframes foglayer_02_opacity {
+            0% {
+                opacity: .5;
+            }
+
+            25% {
+                opacity: .2;
+            }
+
+            50% {
+                opacity: .1;
+            }
+
+            80% {
+                opacity: .3;
+            }
+
+            100% {
+                opacity: .5;
+            }
+        }
+
+        @-moz-keyframes foglayer_02_opacity {
+            0% {
+                opacity: .5;
+            }
+
+            25% {
+                opacity: .2;
+            }
+
+            50% {
+                opacity: .1;
+            }
+
+            80% {
+                opacity: .3;
+            }
+
+            100% {
+                opacity: .5;
+            }
+        }
+
+        @-o-keyframes foglayer_02_opacity {
+            0% {
+                opacity: .5;
+            }
+
+            25% {
+                opacity: .2;
+            }
+
+            50% {
+                opacity: .1;
+            }
+
+            80% {
+                opacity: .3;
+            }
+
+            100% {
+                opacity: .5;
+            }
+        }
+
+        @keyframes foglayer_02_opacity {
+            0% {
+                opacity: .5;
+            }
+
+            25% {
+                opacity: .2;
+            }
+
+            50% {
+                opacity: .1;
+            }
+
+            80% {
+                opacity: .3;
+            }
+
+            100% {
+                opacity: .5;
+            }
+        }
+
+        /* ---------- Keyframe Layer 3 ---------- */
+        @-webkit-keyframes foglayer_03_opacity {
+            0% {
+                opacity: .8
+            }
+
+            27% {
+                opacity: .2;
+            }
+
+            52% {
+                opacity: .6;
+            }
+
+            68% {
+                opacity: .3;
+            }
+
+            100% {
+                opacity: .8;
+            }
+        }
+
+        @-moz-keyframes foglayer_03_opacity {
+            0% {
+                opacity: .8
+            }
+
+            27% {
+                opacity: .2;
+            }
+
+            52% {
+                opacity: .6;
+            }
+
+            68% {
+                opacity: .3;
+            }
+
+            100% {
+                opacity: .8;
+            }
+        }
+
+        @-o-keyframes foglayer_03_opacity {
+            0% {
+                opacity: .8
+            }
+
+            27% {
+                opacity: .2;
+            }
+
+            52% {
+                opacity: .6;
+            }
+
+            68% {
+                opacity: .3;
+            }
+
+            100% {
+                opacity: .8;
+            }
+        }
+
+        @keyframes foglayer_03_opacity {
+            0% {
+                opacity: .8;
+            }
+
+            27% {
+                opacity: .2;
+            }
+
+            52% {
+                opacity: .6;
+            }
+
+            68% {
+                opacity: .3;
+            }
+
+            100% {
+                opacity: .8;
+            }
+        }
+
+        /* ---------- Keyframe moveMe ---------- */
+        @-webkit-keyframes foglayer_moveme {
+            0% {
+                left: 0;
+            }
+
+            100% {
+                left: -100%;
+            }
+        }
+
+        @-moz-keyframes foglayer_moveme {
+            0% {
+                left: 0;
+            }
+
+            100% {
+                left: -100%;
+            }
+        }
+
+        @-o-keyframes foglayer_moveme {
+            0% {
+                left: 0;
+            }
+
+            100% {
+                left: -100%;
+            }
+        }
+
+        @keyframes foglayer_moveme {
+            0% {
+                left: 0;
+            }
+
+            100% {
+                left: -100%;
+            }
+        }
+
+        /* 霧層背景圖片 */
+        #foglayer_01 .image01,
+        #foglayer_01 .image02 {
+            background: url("image/fog1.png") center/cover no-repeat;
+        }
+
+        #foglayer_02 .image01,
+        #foglayer_02 .image02,
+        #foglayer_03 .image01,
+        #foglayer_03 .image02 {
+            background: url("image/fog2.png") center/cover no-repeat;
+        }
+
+
+        /* 雨傘提示框 */
+
+        .umbrella-notification {
+            /* 固定在畫面右上角，可自行調整 */
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 6;
+
+            /* 版型與外觀 */
+            display: none;
+            /* 預設隱藏，天氣含「雨」時才顯示 */
+            flex-direction: row;
+            align-items: center;
+            max-width: 320px;
+            padding: 16px;
+            background-color: #fff;
+            border-left: 6px solid #FFA500;
+            /* 左側色條，可換你想要的顏色 */
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+            font-family: sans-serif;
+
+            /* 讓出現時有淡入效果 (可選) */
+            transform: translateX(150%);
+            opacity: 0;
+            transition: transform 0.5s ease, opacity 0.5s ease;
+        }
+
+        /* 透過額外的 .show 類名來切換顯示時的 opacity (可選) */
+        .umbrella-notification.show {
+            display: flex;
+            transform: translateX(0);
+            opacity: 1;
+        }
+
+        /* 圖示區塊：圓底+雨傘icon */
+        .icon-section {
+            width: 40px;
+            height: 40px;
+            background-color: #FFA500;
+            /* 你想要的顏色 */
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 12px;
+        }
+
+        .icon-section img {
+            width: 20px;
+            height: 20px;
+        }
+
+        /* 文字區塊 */
+        .text-section {
+            display: flex;
+            flex-direction: column;
+            margin-right: 8px;
+            /* 給關閉按鈕留點空間 */
+        }
+
+        .text-section .title {
+            font-weight: bold;
+            font-size: 16px;
+            color: #333;
+            margin-bottom: 4px;
+        }
+
+        .text-section .message {
+            font-size: 14px;
+            color: #666;
+        }
+
+        /* 關閉按鈕 */
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 20px;
+            color: #999;
+            cursor: pointer;
+            line-height: 1;
+            align-self: flex-start;
+            /* 讓按鈕在上方對齊 */
+        }
+
+        .close-btn:hover {
+            color: #666;
+        }
+
+        /* --- 以下為「主要功能」區塊的 CSS --- */
+        #mainPanel {
+            /* 讓面板絕對定位在畫面中央 */
+            position: absolute;
+            top: 55%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+
+            /* 大小可自行調整，以下是示範 */
+            width: 70%;
+            height: 70%;
+
+            /* 毛玻璃 (背後濾鏡) 效果 */
+            background: rgba(255, 255, 255, 0.1);
+            /* 半透明底色 */
+            backdrop-filter: blur(10px);
+            /* 毛玻璃核心 */
+            -webkit-backdrop-filter: blur(10px);
+            /* Safari */
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            /* 玻璃邊框可有可無 */
+
+            /* 與雲/太陽類似的陰影感，或可直接用 box-shadow */
+            box-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
+
+            /* 如果想直接使用 filter: drop-shadow 也行，但一般 box-shadow 比較常用 */
+            /* filter: drop-shadow(0 0 5px rgba(0,0,0,0.5)); */
+
+            /* 其他外觀設定 */
+            border-radius: 10px;
+            padding: 20px;
+            color: #000;
+            /* 文字顏色，依背景深淺自行調整 */
+            overflow: auto;
+            /* 若放地圖/清單等超過面板大小，可以捲動 */
+            z-index: 9999;
+            /* 確保在雲之上（雲 z-index 多在 2~4 左右） */
+        }
+    </style>
+</head>
+
+<body>
+    <div id="controls">
+        <label for="weather">天氣狀況：</label>
+        <select id="weather">
+            <option value="晴">晴</option>
+            <option value="多雲">多雲</option>
+            <option value="陰">陰</option>
+            <option value="陰有靄">陰有靄</option>
+            <option value="陰有雨">陰有雨</option>
+            <option value="陰有雷雨">陰有雷雨</option>
+            <option value="無法取得天氣資料">無法取得天氣資料</option>
+        </select>
+        <br>
+        <label for="time">時間：</label>
+        <input type="range" id="time" min="0" max="23" value="12">
+        <span id="timeDisplay">12:00</span>
+        <br>
+        <button id="toggleTime">啟用/停用時間加速</button>
+    </div>
+
+    <!-- 雲朵 & 太陽 -->
+    <img src="image/svg1.svg" alt="Cloud 1" class="cloud cloud1">
+    <img src="image/svg1.svg" alt="Cloud 2" class="cloud cloud2">
+    <img src="image/svg3.svg" alt="Cloud 3" class="cloud cloud3">
+    <img src="image/svg2.svg" alt="Cloud 4" class="cloud cloud4">
+    <img src="image/svg3.svg" alt="Cloud 5" class="cloud cloud5">
+    <img src="image/svg1.svg" alt="Cloud 6" class="cloud cloud6">
+    <img src="image/svg2.svg" alt="Cloud 7" class="cloud cloud7">
+    <img src="image/svg3.svg" alt="Cloud 8" class="cloud cloud8">
+    <img src="image/svg2.svg" alt="Cloud 9" class="cloud cloud9">
+    <img src="image/svg3.svg" alt="Cloud 10" class="cloud cloud10">
+    <img src="image/sun.svg" alt="Sun" class="sun">
+
+    <!-- 雨容器 (在雲的後面, z-index=0) -->
+    <canvas id="canvas"></canvas>
+    <div class="rain front-row"></div>
+    <div class="rain back-row"></div>
+    <!-- 這也是霧的部分 -->
+    <div class="fogwrapper">
+        <div id="foglayer_01" class="fog">
+            <div class="image01"></div>
+            <div class="image02"></div>
+        </div>
+        <div id="foglayer_02" class="fog">
+            <div class="image01"></div>
+            <div class="image02"></div>
+        </div>
+        <div id="foglayer_03" class="fog">
+            <div class="image01"></div>
+            <div class="image02"></div>
+        </div>
+    </div>
+
+    <!-- 雨傘提示框（預設隱藏） -->
+    <div class="umbrella-notification" id="umbrellaNotification">
+        <div class="icon-section">
+            <!-- 將下列路徑替換成你實際 umbrella.svg 的位置 -->
+            <img src="image/umbrella.svg" alt="Umbrella Icon">
+        </div>
+        <div class="text-section">
+            <div class="title">提醒</div>
+            <div class="message">記得帶傘！</div>
+        </div>
+        <button class="close-btn" id="closeUmbrellaBtn">&times;</button>
+    </div>
+    <div id="mainPanel">
+        <h2>主要功能</h2>
+        <p>這裡放地圖、交通資訊、或其他主要內容...</p>
+    </div>
+
+
+    <!-- 引入 jQuery (CDN) -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+
+        // 取得 canvas 與 2D context
+        var canvas = document.getElementById("canvas");
+        var context = canvas.getContext("2d");
+
+        // 設定畫布相關參數
+        var width = 0.0;
+        var height = 0.0;
+        var scale = 1.0;
+
+        // FPS 與前一禎的時間
+        var fps = 45.0;
+        var lastFrame = (new Date()).getTime();
+
+        // 螢幕閃光與閃電參數
+        var flashOpacity = 0.0;
+        var boltFlashDuration = 0.25;
+        var boltFadeDuration = 0.5;
+        var totalBoltDuration = boltFlashDuration + boltFadeDuration;
+
+        // 儲存所有閃電
+        var bolts = [];
+
+        // 調整畫布大小
+        function setCanvasSize() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+
+            // 同步更新所有 bolt canvas 的尺寸
+            for (var i = 0; i < bolts.length; i++) {
+                var b = bolts[i];
+                b.canvas.width = window.innerWidth;
+                b.canvas.height = window.innerHeight;
+            }
+
+            width = Math.ceil(window.innerWidth / scale);
+            height = Math.ceil(window.innerHeight / scale);
+        }
+
+        // 發射閃電
+        function launchBolt(x, y, length, direction) {
+            // 螢幕閃爍
+            flashOpacity = Math.random() * 0.1;
+
+            // 建立一個 canvas 來繪製閃電
+            var boltCanvas = document.createElement("canvas");
+            boltCanvas.width = window.innerWidth;
+            boltCanvas.height = window.innerHeight;
+
+            var boltContext = boltCanvas.getContext("2d");
+            boltContext.scale(scale, scale);
+
+            // 推進 bolts 陣列
+            bolts.push({ canvas: boltCanvas, duration: 0.0 });
+
+            // 真正開始畫閃電
+            recursiveLaunchBolt(x, y, length, direction, boltContext);
+        }
+
+        // 遞迴畫閃電
+        function recursiveLaunchBolt(x, y, length, direction, boltContext) {
+            var originalDirection = direction;
+
+            // 透過 setInterval 逐步畫出閃電
+            var boltInterval = setInterval(function () {
+                if (length <= 0) {
+                    clearInterval(boltInterval);
+                    return;
+                }
+
+                var steps = 0;
+                // 一次畫一小段
+                while (steps++ < Math.floor(45 / scale) && length > 0) {
+                    var x1 = Math.floor(x);
+                    var y1 = Math.floor(y);
+
+                    x += Math.cos(direction);
+                    y -= Math.sin(direction);
+                    length--;
+
+                    if (x1 !== Math.floor(x) || y1 !== Math.floor(y)) {
+                        var alpha = Math.min(1.0, length / 350.0);
+                        boltContext.fillStyle = "rgba(255, 255, 255, " + alpha + ")";
+                        boltContext.fillRect(x1, y1, 1.0, 1.0);
+
+                        // 小幅度偏移，讓閃電分支
+                        direction = originalDirection + (-Math.PI / 8.0 + Math.random() * (Math.PI / 4.0));
+
+                        // 分支 or 重新launch
+                        if (Math.random() > 0.98) {
+                            // 新的分支
+                            recursiveLaunchBolt(
+                                x1, y1,
+                                length * (0.3 + Math.random() * 0.4),
+                                originalDirection + (-Math.PI / 6.0 + Math.random() * (Math.PI / 3.0)),
+                                boltContext
+                            );
+                        } else if (Math.random() > 0.95) {
+                            recursiveLaunchBolt(
+                                x1, y1,
+                                length,
+                                originalDirection + (-Math.PI / 6.0 + Math.random() * (Math.PI / 3.0)),
+                                boltContext
+                            );
+                            length = 0;
+                        }
+                    }
+                }
+            }, 10);
+        }
+
+        // 每禎都會執行
+        function tick() {
+            var frame = (new Date()).getTime();
+            var elapsed = (frame - lastFrame) / 1000.0;
+            lastFrame = frame;
+
+            // 清空畫布
+            context.clearRect(0, 0, window.innerWidth, window.innerHeight);
+
+            // 隨機機率產生閃電
+            if (Math.random() > 0.98 && weatherSelect.value.includes('雷')) {
+                var x = Math.floor(-10.0 + Math.random() * (width + 20.0));
+                var y = Math.floor(5.0 + Math.random() * (height / 3.0));
+                var length = Math.floor(height / 2.0 + Math.random() * (height / 3.0));
+                launchBolt(x, y, length, Math.PI * 3.0 / 2.0);
+            }
+
+            // 螢幕閃光
+            if (flashOpacity > 0.0 && weatherSelect.value.includes('雷')) {
+                context.fillStyle = "rgba(255, 255, 255, " + flashOpacity + ")";
+                context.fillRect(0, 0, window.innerWidth, window.innerHeight);
+                flashOpacity = Math.max(0.0, flashOpacity - 0.5 * elapsed);
+            }
+
+            // 繪製所有閃電
+            for (var i = 0; i < bolts.length; i++) {
+                var bolt = bolts[i];
+                bolt.duration += elapsed;
+
+                if (bolt.duration >= totalBoltDuration) {
+                    // 閃電時間到，移除
+                    bolts.splice(i, 1);
+                    i--;
+                    continue;
+                }
+
+                // 計算閃電 fade out 程度
+                var fadeRatio = (totalBoltDuration - bolt.duration) / boltFadeDuration;
+                context.globalAlpha = Math.max(0.0, Math.min(1.0, fadeRatio));
+
+                context.drawImage(bolt.canvas, 0, 0);
+            }
+        }
+
+        // 初始化
+        window.addEventListener("resize", setCanvasSize);
+        function setCanvasSize() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+
+            // 同步更新 bolts
+            for (var i = 0; i < bolts.length; i++) {
+                bolts[i].canvas.width = window.innerWidth;
+                bolts[i].canvas.height = window.innerHeight;
+            }
+
+            width = Math.ceil(window.innerWidth / scale);
+            height = Math.ceil(window.innerHeight / scale);
+        }
+
+        setCanvasSize();
+        setInterval(tick, 1000.0 / fps);
+        /* ============================
+           1. 原本的 lab2 JS 邏輯
+           ============================ */
+        const body = document.body;
+        const weatherSelect = document.getElementById('weather');
+        const timeSlider = document.getElementById('time');
+        const timeDisplay = document.getElementById('timeDisplay');
+        const toggleTimeBtn = document.getElementById('toggleTime');
+        const clouds = document.querySelectorAll('.cloud');
+        const sun = document.querySelector('.sun');
+
+        let acceleratedTime = false;
+        let currentHour = parseInt(timeSlider.value);
+
+        const weatherColors = {
+            '晴': ['#6C8EBF', '#87CEEB', '#FF7F50', '#483D8B'],
+            '多雲': ['#6C8EBF', '#87CEEB', '#DB714B', '#483D8B'],
+            '陰': ['#606060', '#808080', '#696969', '#404040'],
+            '陰有靄': ['#606060', '#808080', '#696969', '#404040'],
+            '陰有雨': ['#606060', '#808080', '#696969', '#404040'],
+            '陰有雷雨': ['#606060', '#808080', '#696969', '#404040'],
+            '無法取得天氣資料': ['#f0f0f0', '#f0f0f0', '#f0f0f0', '#f0f0f0']
+        };
+
+        function parseColor(hex) {
+            // 移除 #，轉大寫
+            hex = hex.replace('#', '');
+            if (hex.length === 3) {
+                // 簡寫 #abc => #aabbcc
+                hex = hex[0] + hex[0] + hex[1] + hex[1] + hex[2] + hex[2];
+            }
+            const r = parseInt(hex.substring(0, 2), 16);
+            const g = parseInt(hex.substring(2, 4), 16);
+            const b = parseInt(hex.substring(4, 6), 16);
+            return { r, g, b };
+        }
+
+        // 亮/暗處理 => amt >0 => 變亮, <0 => 變暗
+        function lightenOrDarken({ r, g, b }, amt) {
+            // clamp => 0~255
+            const nr = Math.min(255, Math.max(0, r + amt));
+            const ng = Math.min(255, Math.max(0, g + amt));
+            const nb = Math.min(255, Math.max(0, b + amt));
+            // 回成 #RRGGBB
+            return '#' + nr.toString(16).padStart(2, '0')
+                + ng.toString(16).padStart(2, '0')
+                + nb.toString(16).padStart(2, '0');
+        }
+
+        // 建立漸層: top(稍微亮一些) => bottom(原色或稍暗)
+        // 這裡 amt = 30 => 代表 top 亮 30, bottom 暗 30
+        // 你可依需求微調
+        function makeGradient(baseColor) {
+            const c = parseColor(baseColor);
+            const topColor = lightenOrDarken(c, 40);   // 上方比較亮
+            const bottomColor = lightenOrDarken(c, -40); // 下方比較暗
+            return `linear-gradient(to bottom, ${topColor}, ${bottomColor})`;
+        }
+
+        function getCloudBrightness(hour) {
+            if (hour >= 5 && hour < 7) {
+                return 0.8;
+            } else if (hour >= 7 && hour < 16) {
+                return 1.0;
+            } else if (hour >= 16 && hour < 19) {
+                return 0.8;
+            } else {
+                return 0.6;
+            }
+        }
+
+        function getCloudFilter(weather, hour) {
+            const brightness = getCloudBrightness(hour);
+            const base = 'drop-shadow(0 0 5px rgba(0,0,0,0.5))';
+            if (weather.includes('陰')) {
+                let factor = 0.4;
+                if (hour >= 7 && hour < 16) {
+                    factor = 0.5; // 白天陰天稍微亮一點
+                } else {
+                    factor = 0.3; // 晚上更暗
+                }
+                return `${base} grayscale(100%) brightness(${factor})`;
+            } else if (weather === '多雲') {
+                if (hour >= 16 && hour < 19) {
+                    // 黃昏
+                    return `${base} sepia(1) hue-rotate(-30deg) brightness(${brightness}) saturate(5)`;
+                } else {
+                    return `${base} brightness(${brightness})`;
+                }
+            } else {
+                // 晴 or 其他
+                return `${base} brightness(${brightness})`;
+            }
+        }
+
+        // 取得提示框元素與關閉按鈕
+        const umbrellaNotification = document.getElementById('umbrellaNotification');
+        const closeUmbrellaBtn = document.getElementById('closeUmbrellaBtn');
+
+        /** 顯示提示框：加上 .show 觸發 CSS transition */
+        function showUmbrellaNotification() {
+            // 先將 display 設為 flex，等下一個事件循環再加上 show
+            umbrellaNotification.style.display = 'flex';
+            requestAnimationFrame(() => {
+                umbrellaNotification.classList.add('show');
+            });
+        }
+
+        /** 隱藏提示框：移除 .show，待 transition 結束後再設 display:none */
+        function hideUmbrellaNotification() {
+            umbrellaNotification.classList.remove('show');
+            // 等 0.5 秒（和 CSS transition 時間一致），再隱藏
+            setTimeout(() => {
+                umbrellaNotification.style.display = 'none';
+            }, 500);
+        }
+
+
+        // 點擊「×」按鈕後隱藏提示框
+        closeUmbrellaBtn.addEventListener('click', () => {
+            hideUmbrellaNotification();
+        });
+
+        document.addEventListener('click', (event) => {
+            // 如果提示框本身是顯示中的狀態，而且點擊不在提示框內
+            if (
+                umbrellaNotification.classList.contains('show') &&
+                !umbrellaNotification.contains(event.target)
+            ) {
+                hideUmbrellaNotification();
+            }
+        });
+
+
+        function updateBackground() {
+            const weather = weatherSelect.value;
+            const colors = weatherColors[weather] || weatherColors['無法取得天氣資料'];
+
+            let color;
+            if (currentHour >= 5 && currentHour < 7) {
+                color = colors[0]; // 清晨
+            } else if (currentHour >= 7 && currentHour < 16) {
+                color = colors[1]; // 白天
+            } else if (currentHour >= 16 && currentHour < 19) {
+                color = colors[2]; // 黃昏
+            } else {
+                color = colors[3]; // 夜晚
+            }
+            body.style.background = makeGradient(color);
+
+            // 雲朵顯示/退出
+            if (weather.includes('雲') || weather.includes('陰')) {
+                // 顯示雲
+                clouds.forEach((cloud, i) => {
+                    if (i < 5) {
+                        cloud.classList.remove('cloudExitRight');
+                        cloud.classList.add('slideInRight');
+                    } else {
+                        cloud.classList.remove('cloudExitLeft');
+                        cloud.classList.add('slideInLeft');
+                    }
+                    cloud.style.display = 'block';
+                    cloud.style.filter = getCloudFilter(weather, currentHour);
+                });
+            } else {
+                // 隱藏雲
+                clouds.forEach((cloud, i) => {
+                    cloud.classList.remove('slideInRight', 'slideInLeft');
+                    if (i < 5) {
+                        cloud.classList.add('cloudExitRight');
+                    } else {
+                        cloud.classList.add('cloudExitLeft');
+                    }
+                    setTimeout(() => {
+                        cloud.style.display = 'none';
+                    }, 1000);
+                });
+            }
+
+            // 太陽顯示/隱藏
+            if (currentHour >= 7 && currentHour < 19 && weather === '晴') {
+                sun.style.display = 'block';
+                sun.style.animation = 'slideInDown 1s forwards';
+            } else {
+                sun.style.animation = 'slideOutUp 1s forwards';
+                setTimeout(() => {
+                    if (!(currentHour >= 7 && currentHour < 19 && weather === '晴')) {
+                        sun.style.display = 'none';
+                    }
+                }, 1000);
+            }
+
+            // ===== 新增霧效果控制 =====
+            const fogWrapper = document.querySelector('.fogwrapper');
+            if (weather.includes('靄')) {
+                fogWrapper.style.display = 'block'; // 顯示霧
+            } else {
+                fogWrapper.style.display = 'none';  // 隱藏霧
+            }
+
+
+            // 雨滴顯示/隱藏
+            if (weather.includes('雨')) {
+                // 顯示 rain
+                document.querySelectorAll('.rain').forEach(r => {
+                    r.style.display = 'block';
+                });
+                makeItRain();
+            } else {
+                // 隱藏 rain
+                document.querySelectorAll('.rain').forEach(r => {
+                    r.style.display = 'none';
+                    r.innerHTML = ''; // 清空雨滴
+                });
+            }
+
+            // === 雨傘提示框顯示/隱藏 ===
+            if (weather.includes('雨')) {
+                showUmbrellaNotification();
+            } else {
+                hideUmbrellaNotification();
+            }
+
+
+        }
+
+        function updateTimeDisplay() {
+            timeDisplay.textContent = `${String(currentHour).padStart(2, '0')}:00`;
+        }
+
+        weatherSelect.addEventListener('change', updateBackground);
+        timeSlider.addEventListener('input', (e) => {
+            currentHour = parseInt(e.target.value);
+            updateTimeDisplay();
+            updateBackground();
+        });
+        toggleTimeBtn.addEventListener('click', () => {
+            acceleratedTime = !acceleratedTime;
+            toggleTimeBtn.textContent = acceleratedTime ? '停用時間加速' : '啟用時間加速';
+        });
+
+        setInterval(() => {
+            if (acceleratedTime) {
+                currentHour = (currentHour + 1) % 24;
+                timeSlider.value = currentHour;
+                updateTimeDisplay();
+                updateBackground();
+            }
+        }, 1000);
+
+        // 初始化
+        updateTimeDisplay();
+        updateBackground();
+
+        /* ============================
+           2. 新增的「雨滴」程式
+           ============================ */
+        function makeItRain() {
+            // 清空現有的雨滴
+            $('.rain').empty();
+
+            let increment = 0;
+            let drops = "";
+            let backDrops = "";
+
+            while (increment < 100) {
+                // random number between 98 and 1
+                let randoHundo = (Math.floor(Math.random() * (98 - 1 + 1) + 1));
+                // random number between 5 and 2
+                let randoFiver = (Math.floor(Math.random() * (5 - 2 + 1) + 2));
+
+                increment += randoFiver;
+
+                // front row
+                drops += '<div class="drop" style="left: ' + increment + '%; bottom: '
+                    + (randoFiver + randoFiver - 1 + 100) + '%; animation-delay: 0.'
+                    + randoHundo + 's; animation-duration: 0.5' + randoHundo + 's;">'
+                    + '<div class="stem" style="animation-delay: 0.' + randoHundo
+                    + 's; animation-duration: 0.5' + randoHundo + 's;"></div>'
+                    + '<div class="splat" style="animation-delay: 0.' + randoHundo
+                    + 's; animation-duration: 0.5' + randoHundo + 's;"></div>'
+                    + '</div>';
+
+                // back row
+                backDrops += '<div class="drop" style="right: ' + increment + '%; bottom: '
+                    + (randoFiver + randoFiver - 1 + 100) + '%; animation-delay: 0.'
+                    + randoHundo + 's; animation-duration: 0.5' + randoHundo + 's;">'
+                    + '<div class="stem" style="animation-delay: 0.' + randoHundo
+                    + 's; animation-duration: 0.5' + randoHundo + 's;"></div>'
+                    + '<div class="splat" style="animation-delay: 0.' + randoHundo
+                    + 's; animation-duration: 0.5' + randoHundo + 's;"></div>'
+                    + '</div>';
+            }
+
+            $('.rain.front-row').append(drops);
+            $('.rain.back-row').append(backDrops);
+        }
+    </script>
+</body>
+
+</html>

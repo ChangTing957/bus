@@ -209,6 +209,52 @@
         transform: scale(1.5);
       }
     }
+
+    /* 這是霧的程式 */
+    .fogwrapper {
+      height: 100%;
+      position: absolute;
+      top: 0;
+      width: 100%;
+      -webkit-filter: blur(1px) grayscale(0.2) saturate(1.2) sepia(0.2);
+      filter: blur(1px) grayscale(0.2) saturate(1.2) sepia(0.2);
+      display: none; /* 預設隱藏 */
+      z-index: 5; /* 在雲層下方，控制面板上方 */
+    }
+    #foglayer_01, #foglayer_02, #foglayer_03 {
+      height: 100%;
+      position: absolute;
+      width: 200%;
+    }
+    #foglayer_01 .image01, #foglayer_01 .image02,
+    #foglayer_02 .image01, #foglayer_02 .image02,
+    #foglayer_03 .image01, #foglayer_03 .image02 {
+      float: left;
+      height: 100%;
+      width: 50%;
+    }
+    /* 霧層動畫 */
+    #foglayer_01 {
+      animation: foglayer_01_opacity 10s linear infinite, foglayer_moveme 15s linear infinite;
+    }
+    #foglayer_02, #foglayer_03 {
+      animation: foglayer_02_opacity 21s linear infinite, foglayer_moveme 13s linear infinite;
+    }
+    /* 霧層關鍵影格 */
+    @keyframes foglayer_01_opacity { /* 原有關鍵影格保持不變 */ }
+    @keyframes foglayer_02_opacity { /* 原有關鍵影格保持不變 */ }
+    @keyframes foglayer_moveme {
+      0% { left: 0; }
+      100% { left: -100%; }
+    }
+    /* 霧層背景圖片 */
+    #foglayer_01 .image01, #foglayer_01 .image02 {
+      background: url("image/fog1.png") center/cover no-repeat;
+    }
+    #foglayer_02 .image01, #foglayer_02 .image02,
+    #foglayer_03 .image01, #foglayer_03 .image02 {
+      background: url("image/fog2.png") center/cover no-repeat;
+    }
   </style>
 </head>
 <body>
@@ -248,6 +294,21 @@
   <canvas id="canvas"></canvas>
   <div class="rain front-row"></div>
   <div class="rain back-row"></div>
+  <!-- 這也是霧的部分 -->
+  <div class="fogwrapper">
+    <div id="foglayer_01" class="fog">
+      <div class="image01"></div>
+      <div class="image02"></div>
+    </div>
+    <div id="foglayer_02" class="fog">
+      <div class="image01"></div>
+      <div class="image02"></div>
+    </div>
+    <div id="foglayer_03" class="fog">
+      <div class="image01"></div>
+      <div class="image02"></div>
+    </div>
+  </div>
 
   <!-- 引入 jQuery (CDN) -->
   <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
@@ -373,7 +434,7 @@
       context.clearRect(0, 0, window.innerWidth, window.innerHeight);
 
       // 隨機機率產生閃電
-      if (Math.random() > 0.98) {
+      if (Math.random() > 0.98 && weatherSelect.value.includes('雷')) {
         var x = Math.floor(-10.0 + Math.random() * (width + 20.0));
         var y = Math.floor(5.0 + Math.random() * (height / 3.0));
         var length = Math.floor(height / 2.0 + Math.random() * (height / 3.0));
@@ -381,7 +442,7 @@
       }
 
       // 螢幕閃光
-      if (flashOpacity > 0.0) {
+      if (flashOpacity > 0.0 && weatherSelect.value.includes('雷')) {
         context.fillStyle = "rgba(255, 255, 255, " + flashOpacity + ")";
         context.fillRect(0, 0, window.innerWidth, window.innerHeight);
         flashOpacity = Math.max(0.0, flashOpacity - 0.5 * elapsed);
@@ -578,6 +639,15 @@
         }, 1000);
       }
 
+      // ===== 新增霧效果控制 =====
+      const fogWrapper = document.querySelector('.fogwrapper');
+      if (weather.includes('靄')) {
+        fogWrapper.style.display = 'block'; // 顯示霧
+      } else {
+        fogWrapper.style.display = 'none';  // 隱藏霧
+      }
+
+
       // 雨滴顯示/隱藏
       if (weather.includes('雨')) {
         // 顯示 rain
@@ -592,6 +662,7 @@
           r.innerHTML = ''; // 清空雨滴
         });
       }
+          
     }
 
     function updateTimeDisplay() {
