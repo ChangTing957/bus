@@ -25,7 +25,7 @@
             position: absolute;
             top: 10px;
             left: 10px;
-            z-index: 7;
+            z-index: 8;
             background: rgba(255, 255, 255, 0.8);
             padding: 10px;
             border-radius: 5px;
@@ -136,23 +136,23 @@
         /* 雲朵定位 */
         .cloud1 {
             top: -120px;
-            right: -100px;
-            width: 600px;
+            right: -150px;
+            width: 700px;
             height: auto;
             z-index: 2;
         }
 
         .cloud2 {
-            top: 30px;
-            right: 0px;
-            width: 300px;
+            top: -40px;
+            right: 500px;
+            width: 400px;
             height: auto;
             z-index: 3;
         }
 
         .cloud3 {
-            top: 100px;
-            right: 350px;
+            top: 0px;
+            right: -50px;
             width: 300px;
             height: auto;
             z-index: 4;
@@ -160,24 +160,24 @@
         }
 
         .cloud4 {
-            top: -20px;
-            right: 300px;
-            width: 200px;
+            top: -60px;
+            right: 200px;
+            width: 300px;
             height: auto;
             z-index: 3;
             transform: scaleX(-1);
         }
 
         .cloud5 {
-            top: -80px;
+            top: -150px;
             right: 350px;
-            width: 400px;
+            width: 600px;
             height: auto;
             z-index: 2;
         }
 
         .cloud6 {
-            top: -100px;
+            top: -140px;
             left: -150px;
             width: 700px;
             height: auto;
@@ -185,8 +185,8 @@
         }
 
         .cloud7 {
-            top: 80px;
-            left: 30px;
+            top: 40px;
+            left: 200px;
             width: 300px;
             height: auto;
             z-index: 3;
@@ -194,24 +194,24 @@
         }
 
         .cloud8 {
-            top: -150px;
-            left: 300px;
+            top: -190px;
+            left: 0px;
             width: 500px;
             height: auto;
             z-index: 2;
         }
 
         .cloud9 {
-            top: -50px;
-            left: 700px;
+            top: -90px;
+            left: 0px;
             width: 300px;
             height: auto;
             z-index: 3;
         }
 
         .cloud10 {
-            top: 0px;
-            left: 400px;
+            top: -120px;
+            left: 300px;
             width: 500px;
             height: auto;
             z-index: 2;
@@ -707,9 +707,9 @@
         .umbrella-notification {
             /* 固定在畫面右上角，可自行調整 */
             position: fixed;
-            top: 20px;
+            top: 5px;
             right: 20px;
-            z-index: 6;
+            z-index: 8;
 
             /* 版型與外觀 */
             display: none;
@@ -801,8 +801,8 @@
             transform: translate(-50%, -50%);
 
             /* 大小可自行調整，以下是示範 */
-            width: 70%;
-            height: 70%;
+            width: 80%;
+            height: 80%;
 
             /* 毛玻璃 (背後濾鏡) 效果 */
             background: rgba(255, 255, 255, 0.1);
@@ -827,7 +827,7 @@
             /* 文字顏色，依背景深淺自行調整 */
             overflow: auto;
             /* 若放地圖/清單等超過面板大小，可以捲動 */
-            z-index: 9999;
+            z-index:  7;
             /* 確保在雲之上（雲 z-index 多在 2~4 左右） */
         }
     </style>
@@ -838,7 +838,7 @@
         <label for="weather">天氣狀況：</label>
         <select id="weather">
             <option value="晴">晴</option>
-            <option value="多雲">多雲</option>
+            <option value="多雲" selected>多雲</option>
             <option value="陰">陰</option>
             <option value="陰有靄">陰有靄</option>
             <option value="陰有雨">陰有雨</option>

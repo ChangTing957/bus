@@ -3,7 +3,6 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>大墩公益路口公車到站時間查詢</title>
   <style>
     body { font-family: Arial, sans-serif; margin: 20px; }
     h1 { color: #333; }
@@ -12,8 +11,12 @@
   </style>
 </head>
 <body>
-  <h1>大墩公益路口公車到站時間查詢</h1>
-  <ul id="bus-arrival-times"></ul>
+  <h1>公車到站時間查詢</h1>
+
+  <!-- 容器：用來顯示所有去程、回程的清單 -->
+  <div id="bus-arrival-times"></div>
+
+  <!-- 顯示原始 JSON 資料 (除錯用) -->
   <pre id="raw-json"></pre>
 
   <script>
@@ -37,13 +40,13 @@
       }
     }
 
-    // 取得大墩公益路口站的預估到站時間
+    // 取得「公益大墩路口」站的預估到站時間
     async function getBusArrivalTimes() {
       try {
         const token = await getAccessToken();
         // 使用 City 版 API 並以 $filter 過濾站牌名稱
         const url = "https://tdx.transportdata.tw/api/basic/v2/Bus/EstimatedTimeOfArrival/City/Taichung" +
-                    "?$filter=StopName/Zh_tw eq '大墩公益路口'" +
+                    "?$filter=StopName/Zh_tw eq '公益大墩路口'" +
                     "&$format=JSON";
         const response = await fetch(url, {
           headers: { 'Authorization': `Bearer ${token}` }
@@ -58,26 +61,74 @@
 
     // 將資料顯示在網頁上
     function displayBusArrivalTimes(busData) {
-      const busList = document.getElementById('bus-arrival-times');
-      busList.innerHTML = ''; // 清空列表
-
-      // 將原始 JSON 也顯示出來，方便除錯
+      // 顯示原始 JSON（除錯用）
       document.getElementById('raw-json').textContent = JSON.stringify(busData, null, 2);
 
-      if (Array.isArray(busData) && busData.length > 0) {
-        busData.forEach(bus => {
-          const listItem = document.createElement('li');
-          // 根據資料結構，路線名稱為物件 (例如：bus.RouteName.Zh_tw)
-          const routeName = bus.RouteName && bus.RouteName.Zh_tw ? bus.RouteName.Zh_tw : '未知路線';
+      // 容器（外層）
+      const container = document.getElementById('bus-arrival-times');
+      container.innerHTML = ''; // 清空
+
+      // 若無資料，直接顯示「查無資料」
+      if (!Array.isArray(busData) || busData.length === 0) {
+        container.textContent = "查無資料";
+        return;
+      }
+
+      // 分別過濾出去程、回程資料
+      const goData = busData.filter(item => item.Direction === 0);
+      const backData = busData.filter(item => item.Direction === 1);
+
+      // --- 去程 ---
+      const goHeading = document.createElement('h2');
+      goHeading.textContent = '去程';
+      container.appendChild(goHeading);
+
+      // 去程清單
+      const goList = document.createElement('ul');
+      if (goData.length > 0) {
+        goData.forEach(bus => {
+          const routeName = (bus.RouteName && bus.RouteName.Zh_tw) ? bus.RouteName.Zh_tw : '未知路線';
           const estimateTime = bus.EstimateTime;
-          // 如果有預估時間，轉換成分鐘；否則顯示 "尚無預估時間"
-          const arrivalTime = (estimateTime || estimateTime === 0) ? `${Math.floor(estimateTime / 60)} 分鐘後` : '尚無預估時間';
-          listItem.textContent = `路線 ${routeName} - 預計到站時間：${arrivalTime}`;
-          busList.appendChild(listItem);
+          const arrivalTime = (estimateTime || estimateTime === 0)
+            ? `${Math.floor(estimateTime / 60)} 分鐘後`
+            : '尚無預估時間';
+          const li = document.createElement('li');
+          li.textContent = `路線 ${routeName} - 預計到站時間：${arrivalTime}`;
+          goList.appendChild(li);
         });
       } else {
-        busList.textContent = "查無資料";
+        // 若沒有去程資料
+        const li = document.createElement('li');
+        li.textContent = "無去程資料";
+        goList.appendChild(li);
       }
+      container.appendChild(goList);
+
+      // --- 回程 ---
+      const backHeading = document.createElement('h2');
+      backHeading.textContent = '回程';
+      container.appendChild(backHeading);
+
+      // 回程清單
+      const backList = document.createElement('ul');
+      if (backData.length > 0) {
+        backData.forEach(bus => {
+          const routeName = (bus.RouteName && bus.RouteName.Zh_tw) ? bus.RouteName.Zh_tw : '未知路線';
+          const estimateTime = bus.EstimateTime;
+          const arrivalTime = (estimateTime || estimateTime === 0)
+            ? `${Math.floor(estimateTime / 60)} 分鐘後`
+            : '尚無預估時間';
+          const li = document.createElement('li');
+          li.textContent = `路線 ${routeName} - 預計到站時間：${arrivalTime}`;
+          backList.appendChild(li);
+        });
+      } else {
+        // 若沒有回程資料
+        const li = document.createElement('li');
+        li.textContent = "無回程資料";
+        backList.appendChild(li);
+      }
+      container.appendChild(backList);
     }
 
     // 初始化函式
