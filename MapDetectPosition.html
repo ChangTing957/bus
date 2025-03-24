@@ -183,35 +183,72 @@
 .tab-content.active {
   display: block;
 }
+
+    /* 黑色透明玻璃覆蓋 */
+    #overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.7); /* 黑色透明 */
+      z-index: 1001; /* 高於 mainPanel */
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    /* 美觀的按鈕 */
+    #startButton {
+      padding: 15px 30px;
+      font-size: 18px;
+      font-weight: bold;
+      color: white;
+      background: linear-gradient(45deg, #6a11cb, #2575fc); /* 漸層背景 */
+      border: none;
+      border-radius: 8px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+      cursor: pointer;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    #startButton:hover {
+      transform: scale(1.1); /* 放大效果 */
+      box-shadow: 0 6px 8px rgba(0, 0, 0, 0.4);
+    }
+
+    #startButton:active {
+      transform: scale(1.05); /* 點擊時稍微縮小 */
+      box-shadow: 0 3px 5px rgba(0, 0, 0, 0.2);
+    }
   </style>
 </head>
 
 <body>
-  <button onclick="findNearestFiveStops()">搜尋最近五站</button>
- 
+  <!-- 黑色透明玻璃覆蓋 -->
+  <div id="overlay">
+    <button id="startButton" onclick="startApp()">搜尋最近公車站</button>
+  </div>
+
   <!-- 地圖主面板 -->
   <div id="mainPanel">
     <div id="map"></div>
-
     <!-- 資訊面板 -->
     <div id="infoPanel">
       <!-- 關閉按鈕 -->
       <button id="closeBtn">X</button>
-
       <h3 id="stationTitle">站名</h3>
-<!-- 兩個按鈕做為 Tab -->
-<div class="tabs">
-  <button id="goBtn" class="active">去程</button>
-  <button id="backBtn">回程</button>
-</div>
-<!-- 兩個分頁內容 -->
-<div id="goContent" class="tab-content active">
-  <p>去程資料</p>
-</div>
-<div id="backContent" class="tab-content">
-  <p>回程資料</p>
-</div>
-</div>
+      <div class="tabs">
+        <button id="goBtn" class="active">去程</button>
+        <button id="backBtn">回程</button>
+      </div>
+      <div id="goContent" class="tab-content active">
+        <p>去程資料</p>
+      </div>
+      <div id="backContent" class="tab-content">
+        <p>回程資料</p>
+      </div>
+    </div>
   </div>
 
   <script>
@@ -223,6 +260,13 @@ let panelOpenTime = 0;  // 紀錄面板開啟時間（毫秒）
 let globalTDXToken = null;
 let globalTokenExpireTime = 0; // 紀錄 Token 何時到期 (毫秒時間戳)
 const routeInfoCache = new Map(); // 路線資訊快取
+
+function startApp() {
+      // 隱藏黑色透明玻璃
+      document.getElementById('overlay').style.display = 'none';
+      // 呼叫搜尋最近公車站的功能
+      findNearestFiveStops();
+    }
 
 
 function initMap() {
@@ -301,13 +345,13 @@ function showTab(tab) {
   if (tab === 'go') {
     goBtn.classList.add('active');
     backBtn.classList.remove('active');
-    goContent.classList.add('active');
-    backContent.classList.remove('active');
-  } else {
+    goContent.style.display = 'block'; // 顯示去程內容
+    backContent.style.display = 'none'; // 隱藏回程內容
+  } else if (tab === 'back') {
     goBtn.classList.remove('active');
     backBtn.classList.add('active');
-    goContent.classList.remove('active');
-    backContent.classList.add('active');
+    goContent.style.display = 'none'; // 隱藏去程內容
+    backContent.style.display = 'block'; // 顯示回程內容
   }
 }
 
