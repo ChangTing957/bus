@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+
+<head>
+  <meta charset="UTF-8">
+  <title>毛玻璃 + Google Maps (捲簾式、可放大/收合)</title>
+  <style>
+    /* 讓頁面填滿視窗 */
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+    }
+
+    /* 切換座標的小框，固定在左上角 */
+    #mapControls {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      z-index: 9999;
+      background: rgba(255, 255, 255, 0.8);
+      padding: 10px;
+      border-radius: 5px;
+      font-family: sans-serif;
+    }
+
+    /*
+      主面板 (裝地圖)
+      - 去掉底部圓角，以免看起來有「下邊一條線」。
+      - 用同樣的毛玻璃效果 (rgba + backdrop-filter)。
+    */
+    #mainPanel {
+      position: absolute;
+      top: 45%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 70%;
+      height: 85%;
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      box-shadow:
+        0 -5px 5px rgba(0, 0, 0, 0.5), /* 上 */
+        5px 0 5px rgba(0, 0, 0, 0.5),  /* 右 */
+        -5px 0 5px rgba(0, 0, 0, 0.5); /* 左 */
+      border-top-left-radius: 10px;
+      border-top-right-radius: 10px;
+      /* 讓底部是直角，避免多一道邊界 */
+      border-bottom-left-radius: 0;
+      border-bottom-right-radius: 0;
+
+      overflow: hidden;
+      z-index: 999; /* 地圖層級 */
+    }
+
+    /* 地圖容器 */
+    #map {
+      width: 100%;
+      height: 100%;
+      transition: transform 0.6s cubic-bezier(0.175, 0.885, 0.320, 1.275);
+    }
+
+    #mainPanel, #infoPanel {
+      box-sizing: border-box;
+      width: 70%;
+    }
+
+    /* 資訊面板初始：height=50% */
+    #infoPanel {
+      position: absolute;
+      left: 0;
+      bottom: 0;
+      z-index: 1000;
+      width: 100%;
+      height: 50%;
+      margin: 0;
+
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-top-left-radius: 0;
+      border-top-right-radius: 0;
+      border-bottom-left-radius: 10px;
+      border-bottom-right-radius: 10px;
+      box-shadow:
+        5px 0 5px rgba(0, 0, 0, 0.3),  /* 右 */
+        -5px 0 5px rgba(0, 0, 0, 0.3), /* 左 */
+        0 5px 5px rgba(0, 0, 0, 0.3);  /* 下 */
+      padding: 10px;
+      font-family: sans-serif;
+      overflow: auto;
+
+      /* 滑動 + 高度動畫 */
+      transition: transform 0.6s ease-out, height 0.6s ease-out;
+      transform: translateY(100%); /* 預設不顯示 (藏在下方) */
+      display: none; /* 預設隱藏，等到打開時再切換為 block */
+    }
+
+    /* .open => 往上滑出 */
+    #infoPanel.open {
+      transform: translateY(0);
+    }
+
+    /* .big => 面板高度變更大 (80%) */
+    #infoPanel.big {
+      height: 90%;
+    }
+
+    /* 關閉按鈕 */
+    #closeBtn {
+      float: right;
+      background: #ccc;
+      border: none;
+      font-weight: bold;
+      cursor: pointer;
+      padding: 4px 8px;
+      margin-top: -6px;
+      margin-right: -6px;
+      border-radius: 4px;
+    }
+
+    /* Tab 樣式 */
+    .tabs {
+      margin-bottom: 10px;
+      clear: both;
+    }
+
+    .tabs button {
+      padding: 6px 12px;
+      margin-right: 6px;
+      cursor: pointer;
+    }
+
+    .tabs button.active {
+      background-color: #ccc;
+    }
+
+    /* 分頁內容區塊 */
+    .tab-content {
+      display: none;
+      border-top: 1px solid #ddd;
+      padding-top: 10px;
+    }
+
+    .tab-content.active {
+      display: block;
+    }
+  </style>
+</head>
+
+<body>
+  <!-- 座標切換區 -->
+  <div id="mapControls">
+    <h3>切換座標來源</h3>
+    <label>
+      <input type="radio" name="coordMode" value="geolocation" checked>
+      使用我的當前座標
+    </label>
+    <br>
+    <label>
+      <input type="radio" name="coordMode" value="fixed">
+      使用固定座標
+    </label>
+    <br><br>
+    <button onclick="findNearestFiveStops()">搜尋最近五站</button>
+  </div>
+
+  <!-- 地圖主面板 -->
+  <div id="mainPanel">
+    <div id="map"></div>
+
+    <!-- 資訊面板 -->
+    <div id="infoPanel">
+      <!-- 關閉按鈕 -->
+      <button id="closeBtn">X</button>
+
+      <h3 id="stationTitle">站名</h3>
+      <!-- 兩個按鈕做為 Tab -->
+      <div class="tabs">
+        <button id="goBtn" class="active">去程</button>
+        <button id="backBtn">回程</button>
+      </div>
+      <!-- 兩個分頁內容 -->
+      <div id="goContent" class="tab-content active"></div>
+      <div id="backContent" class="tab-content">
+        這裡是「回程」的公車資料
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let map;
+    let userMarker;
+    let infoWindow;
+
+    function initMap() {
+      const initialCenter = { lat: 24.1508, lng: 120.6510 };
+      map = new google.maps.Map(document.getElementById("map"), {
+        center: initialCenter,
+        zoom: 16,
+        styles: [
+          { featureType: "poi", stylers: [{ visibility: "off" }] },
+          { featureType: "transit.station", stylers: [{ visibility: "off" }] }
+        ]
+      });
+      infoWindow = new google.maps.InfoWindow();
+
+      // 綁定 Tab 切換事件
+      document.getElementById('goBtn').addEventListener('click', () => showTab('go'));
+      document.getElementById('backBtn').addEventListener('click', () => showTab('back'));
+
+      // 關閉按鈕 => 收起面板
+      document.getElementById('closeBtn').addEventListener('click', () => {
+        closeInfoPanel();
+      });
+
+      // 點擊地圖空白處 => 如果面板是打開的就收起
+      map.addListener("click", () => {
+        const infoPanel = document.getElementById('infoPanel');
+        if (infoPanel.classList.contains('open')) {
+          closeInfoPanel();
+        }
+      });
+
+      // 點擊資訊面板 => 讓它變大
+      const infoPanel = document.getElementById('infoPanel');
+      infoPanel.addEventListener('click', (e) => {
+        // 避免事件冒泡到 map 的 click
+        e.stopPropagation();
+
+        // 若面板是 open，但還沒變大 => 加 big
+        if (infoPanel.classList.contains('open') && !infoPanel.classList.contains('big')) {
+          infoPanel.classList.add('big');
+        }
+      });
+
+      // 地圖 idle 後，若 zoom < 16，調整為 16
+      google.maps.event.addListenerOnce(map, "idle", () => {
+        if (map.getZoom() < 16) {
+          map.setZoom(16);
+        }
+      });
+    }
+
+    // 收起面板的函式
+    function closeInfoPanel() {
+      const infoPanel = document.getElementById('infoPanel');
+      // 移除放大狀態
+      infoPanel.classList.remove('big');
+      // 移除打開狀態
+      infoPanel.classList.remove('open');
+      // 等動畫跑完，再完全隱藏
+      setTimeout(() => {
+        infoPanel.style.display = 'none';
+      }, 600);
+    }
+
+    // 切換去程/回程分頁
+    function showTab(tab) {
+      const goBtn = document.getElementById('goBtn');
+      const backBtn = document.getElementById('backBtn');
+      const goContent = document.getElementById('goContent');
+      const backContent = document.getElementById('backContent');
+
+      if (tab === 'go') {
+        goBtn.classList.add('active');
+        backBtn.classList.remove('active');
+        goContent.classList.add('active');
+        backContent.classList.remove('active');
+      } else {
+        goBtn.classList.remove('active');
+        backBtn.classList.add('active');
+        goContent.classList.remove('active');
+        backContent.classList.add('active');
+      }
+    }
+
+    // 計算兩座標距離
+    function getDistance(lat1, lon1, lat2, lon2) {
+      const R = 6378137;
+      const dLat = (lat2 - lat1) * Math.PI / 180;
+      const dLon = (lon2 - lon1) * Math.PI / 180;
+      const a =
+        Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+        Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+        Math.sin(dLon / 2) * Math.sin(dLon / 2);
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+      return R * c;
+    }
+
+    // 搜尋最近 5 個公車站
+    async function handleNearestStops(userLat, userLng) {
+      console.log(`使用座標：lat=${userLat}, lng=${userLng}`);
+
+      // 移除舊的使用者 Marker
+      if (userMarker) userMarker.setMap(null);
+
+      // 標記使用者位置
+      userMarker = new google.maps.Marker({
+        position: { lat: userLat, lng: userLng },
+        map: map,
+        title: "我的位置",
+        icon: {
+          path: google.maps.SymbolPath.FORWARD_CLOSED_ARROW,
+          fillColor: "#4285F4",
+          fillOpacity: 1,
+          strokeColor: "#FFFFFF",
+          strokeWeight: 2,
+          scale: 6,
+        },
+        zIndex: 9999,
+      });
+
+      try {
+        const response = await fetch("json/公車站座標.json");
+        const data = await response.json();
+
+        const stops = [];
+        for (const stationName in data) {
+          const stationData = data[stationName];
+          // 預設取「去程」的經緯度，如果沒有，則取「回程」
+          let coords = null;
+          if (stationData["去程"] && stationData["去程"]["經度"] && stationData["去程"]["緯度"]) {
+            coords = stationData["去程"];
+          } else if (stationData["回程"] && stationData["回程"]["經度"] && stationData["回程"]["緯度"]) {
+            coords = stationData["回程"];
+          } else {
+            console.warn(`站名 "${stationName}" 缺少經緯度資訊`);
+            continue;
+          }
+          const lat = parseFloat(coords["緯度"]);
+          const lng = parseFloat(coords["經度"]);
+          const dist = getDistance(userLat, userLng, lat, lng);
+          stops.push({ stationName, lat, lng, distance: dist, rawData: stationData });
+        }
+
+        // 依距離排序，取前 5
+        stops.sort((a, b) => a.distance - b.distance);
+        const nearestFive = stops.slice(0, 5);
+
+        // 為最近 5 站建立 Marker
+        nearestFive.forEach((stop) => {
+          const marker = new google.maps.Marker({
+            position: { lat: stop.lat, lng: stop.lng },
+            map: map,
+            icon: "http://maps.google.com/mapfiles/ms/icons/bus.png",
+          });
+
+          // 點擊該 Marker => 顯示資訊面板
+          marker.addListener("click", () => {
+            // 平滑移動地圖到 Marker
+            map.panTo(marker.getPosition());
+
+            // 打開資訊面板 (預設 50% 高)
+            const infoPanel = document.getElementById('infoPanel');
+            infoPanel.style.display = "block";
+            // 先確保面板不是 big 狀態
+            infoPanel.classList.remove('big');
+            // 再打開
+            void infoPanel.offsetWidth; // 強制 reflow
+            infoPanel.classList.add("open");
+
+            // 顯示站名、去程/回程資料
+            document.getElementById('stationTitle').textContent = stop.stationName;
+            const goData = stop.rawData["去程"];
+            const backData = stop.rawData["回程"];
+            document.getElementById('goContent').innerHTML = goData
+              ? `<p>去程經度: ${goData["經度"]}, 緯度: ${goData["緯度"]}</p>`
+              : "<p>無去程資料</p>";
+            document.getElementById('backContent').innerHTML = backData
+              ? `<p>回程經度: ${backData["經度"]}, 緯度: ${backData["緯度"]}</p>`
+              : "<p>無回程資料</p>";
+
+            // 預設顯示「去程」Tab
+            showTab('go');
+          });
+        });
+
+      } catch (error) {
+        console.error("載入或處理 JSON 時發生錯誤：", error);
+      }
+    }
+
+    // 按鈕事件：搜尋最近 5 站
+    function findNearestFiveStops() {
+      const selected = document.querySelector('input[name="coordMode"]:checked').value;
+      if (selected === "geolocation") {
+        if (!navigator.geolocation) {
+          console.error("瀏覽器不支援 geolocation。");
+          return;
+        }
+        navigator.geolocation.getCurrentPosition(
+          (pos) => {
+            handleNearestStops(pos.coords.latitude, pos.coords.longitude);
+          },
+          (err) => {
+            console.error("無法取得使用者位置：", err);
+          },
+          { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+        );
+      } else {
+        handleNearestStops(24.150814543462218, 120.65102123486855);
+      }
+    }
+  </script>
+
+  <!-- 載入 Google Maps JavaScript API (替換成你的 API Key) -->
+  <script
+    src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBJnEKvcG6N6KdtutVViDu6KjHxqIa6jBI&callback=initMap"
+    async defer>
+  </script>
+</body>
+
+</html>
