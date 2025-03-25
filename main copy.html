@@ -794,46 +794,208 @@
 
         /* --- 以下為「主要功能」區塊的 CSS --- */
         #mainPanel {
-            /* 讓面板絕對定位在畫面中央 */
             position: absolute;
-            top: 55%;
+            top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-
-            /* 大小可自行調整，以下是示範 */
             width: 80%;
-            height: 80%;
-
-            /* 毛玻璃 (背後濾鏡) 效果 */
+            height: 90%;
             background: rgba(255, 255, 255, 0.1);
-            /* 半透明底色 */
             backdrop-filter: blur(10px);
-            /* 毛玻璃核心 */
             -webkit-backdrop-filter: blur(10px);
-            /* Safari */
             border: 1px solid rgba(255, 255, 255, 0.2);
-            /* 玻璃邊框可有可無 */
-
-            /* 與雲/太陽類似的陰影感，或可直接用 box-shadow */
-            box-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
-
-            /* 如果想直接使用 filter: drop-shadow 也行，但一般 box-shadow 比較常用 */
-            /* filter: drop-shadow(0 0 5px rgba(0,0,0,0.5)); */
-
-            /* 其他外觀設定 */
-            border-radius: 10px;
-            padding: 20px;
-            color: #000;
-            /* 文字顏色，依背景深淺自行調整 */
-            overflow: auto;
-            /* 若放地圖/清單等超過面板大小，可以捲動 */
+            box-shadow: 0 -5px 5px rgba(0, 0, 0, 0.5), 5px 0 5px rgba(0, 0, 0, 0.5), -5px 0 5px rgba(0, 0, 0, 0.5);
+            border-top-left-radius: 10px;
+            border-top-right-radius: 10px;
+            border-bottom-left-radius: 0;
+            border-bottom-right-radius: 0;
+            overflow: hidden;
             z-index:  7;
             /* 確保在雲之上（雲 z-index 多在 2~4 左右） */
         }
+
+            /* 地圖容器 */
+    #map {
+      width: 100%;
+      height: 100%;
+      transition: transform 0.6s cubic-bezier(0.175, 0.885, 0.320, 1.275);
+    }
+
+    #mainPanel,
+    #infoPanel {
+      box-sizing: border-box;
+      width: 70%;
+    }
+
+    /* 資訊面板初始：height=50% */
+    #infoPanel {
+      position: absolute;
+      left: 0;
+      bottom: 0;
+      z-index: 1000;
+      width: 100%;
+      height: 50%;
+      margin: 0;
+
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-top-left-radius: 0;
+      border-top-right-radius: 0;
+      border-bottom-left-radius: 10px;
+      border-bottom-right-radius: 10px;
+      box-shadow:
+        5px 0 5px rgba(0, 0, 0, 0.3),
+        /* 右 */
+        -5px 0 5px rgba(0, 0, 0, 0.3),
+        /* 左 */
+        0 5px 5px rgba(0, 0, 0, 0.3);
+      /* 下 */
+      padding: 10px;
+      font-family: sans-serif;
+      overflow: auto;
+
+      /* 滑動 + 高度動畫 */
+      transition: transform 0.4s ease-out, height 0.4s ease-out;
+      transform: translateY(100%);
+      /* 預設不顯示 (藏在下方) */
+      display: none;
+      /* 預設隱藏，等到打開時再切換為 block */
+    }
+
+    /* .open => 往上滑出 */
+    #infoPanel.open {
+      transform: translateY(0);
+    }
+
+    /* .big => 面板高度變更大 (80%) */
+    #infoPanel.big {
+      height: 90%;
+    }
+
+    /* 關閉按鈕 */
+    #closeBtn {
+      float: right;
+      background: #ccc;
+      border: none;
+      font-weight: bold;
+      cursor: pointer;
+      padding: 4px 8px;
+      margin-top: -6px;
+      margin-right: -6px;
+      border-radius: 4px;
+    }
+
+/* 分頁按鈕容器 */
+.tabs {
+  margin-bottom: 10px;
+  display: flex;
+  justify-content: space-around;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  border-bottom: 2px solid #ddd;
+}
+
+/* 分頁按鈕 */
+.tabs li {
+  flex: 1;
+}
+
+.tabs button {
+  flex: 1;
+  padding: 10px 15px;
+  font-size: 16px;
+  font-weight: bold;
+  color: #555;
+  background: linear-gradient(to bottom, #f9f9f9, #e9e9e9);
+  border: 1px solid #ddd;
+  border-bottom: none;
+  border-radius: 8px 8px 0 0;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-align: center;
+}
+
+.tabs button:hover {
+    background: linear-gradient(to bottom, #e9e9e9, #d9d9d9);
+    color: #333;
+}
+
+.tabs button.active {
+    background: #fff;
+  color: #000;
+  border-bottom: 2px solid #fff; /* 隱藏底邊框 */
+  box-shadow: 0 -2px 5px rgba(0, 0, 0, 0.1);
+}
+
+/* 分頁內容 */
+.tab-content {
+    padding: 15px;
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 0 0 8px 8px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  min-height: 400px; /* 設定最小高度 */
+}
+
+/* 確保內容內的段落有適當的間距 */
+.tab-content p {
+  margin: 0;
+  padding: 10px;
+}
+
+.tab-content.active {
+  display: block;
+}
+
+    /* 黑色透明玻璃覆蓋 */
+    #overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.7); /* 黑色透明 */
+      z-index: 1001; /* 高於 mainPanel */
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    /* 美觀的按鈕 */
+    #startButton {
+      padding: 15px 30px;
+      font-size: 18px;
+      font-weight: bold;
+      color: white;
+      background: linear-gradient(45deg, #6a11cb, #2575fc); /* 漸層背景 */
+      border: none;
+      border-radius: 8px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+      cursor: pointer;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    #startButton:hover {
+      transform: scale(1.1); /* 放大效果 */
+      box-shadow: 0 6px 8px rgba(0, 0, 0, 0.4);
+    }
+
+    #startButton:active {
+      transform: scale(1.05); /* 點擊時稍微縮小 */
+      box-shadow: 0 3px 5px rgba(0, 0, 0, 0.2);
+    }
     </style>
 </head>
 
 <body>
+
+    <!-- 黑色透明玻璃覆蓋 -->
+  <div id="overlay">
+    <button id="startButton" onclick="startApp()">搜尋最近公車站</button>
+  </div>
     <div id="controls">
         <label for="weather">天氣狀況：</label>
         <select id="weather">
@@ -898,15 +1060,44 @@
         </div>
         <button class="close-btn" id="closeUmbrellaBtn">&times;</button>
     </div>
+    <!-- 地圖主面板 -->
     <div id="mainPanel">
-        <h2>主要功能</h2>
-        <p>這裡放地圖、交通資訊、或其他主要內容...</p>
+        <div id="map"></div>
+        <!-- 資訊面板 -->
+        <div id="infoPanel">
+            <button id="closeBtn">X</button>
+            <h3 id="stationTitle">站名</h3>
+            <div class="tabs">
+                <button id="goBtn" class="active">去程</button>
+                <button id="backBtn">回程</button>
+            </div>
+            <div id="goContent" class="tab-content active">
+                <p>去程資料</p>
+            </div>
+            <div id="backContent" class="tab-content">
+                <p>回程資料</p>
+            </div>
+        </div>
     </div>
 
 
     <!-- 引入 jQuery (CDN) -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script>
+
+        let routeInfoData = null;
+
+// 載入起點站終點站.json
+async function loadRouteInfo() {
+  try {
+    const response = await fetch("起點站終點站.json");
+    routeInfoData = await response.json();
+    console.log("成功載入起點站終點站資料：", routeInfoData);
+  } catch (error) {
+    console.error("載入起點站終點站.json 時發生錯誤：", error);
+  }
+}
+        
 
         // 取得 canvas 與 2D context
         var canvas = document.getElementById("canvas");
@@ -1377,7 +1568,426 @@
             $('.rain.front-row').append(drops);
             $('.rain.back-row').append(backDrops);
         }
+        let map;
+let userMarker;
+let infoWindow;
+let panelOpenTime = 0;  // 紀錄面板開啟時間（毫秒）
+/* 全域變數：避免重複申請 Token、快取 Route Info */
+let globalTDXToken = null;
+let globalTokenExpireTime = 0; // 紀錄 Token 何時到期 (毫秒時間戳)
+const routeInfoCache = new Map(); // 路線資訊快取
+
+function startApp() {
+      // 隱藏黑色透明玻璃
+      document.getElementById('overlay').style.display = 'none';
+      // 呼叫搜尋最近公車站的功能
+      findNearestFiveStops();
+    }
+
+
+    async function initMap() {
+    // 載入起點站終點站資料
+    await loadRouteInfo();
+
+    const initialCenter = { lat: 24.1508, lng: 120.6510 };
+    map = new google.maps.Map(document.getElementById("map"), {
+        center: initialCenter,
+        zoom: 16,
+        styles: [
+            { featureType: "poi", stylers: [{ visibility: "off" }] },
+            { featureType: "transit.station", stylers: [{ visibility: "off" }] }
+        ]
+    });
+    infoWindow = new google.maps.InfoWindow();
+
+    // 綁定 Tab 切換事件
+    document.getElementById('goBtn').addEventListener('click', () => showTab('go'));
+    document.getElementById('backBtn').addEventListener('click', () => showTab('back'));
+
+    // 綁定關閉按鈕事件
+    document.getElementById('closeBtn').addEventListener('click', () => {
+        closeInfoPanel();
+    });
+
+    // 點擊資訊面板本身則讓面板變大（展開更多資訊）
+    const infoPanel = document.getElementById('infoPanel');
+    infoPanel.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (infoPanel.classList.contains('open') && !infoPanel.classList.contains('big')) {
+            infoPanel.classList.add('big');
+        }
+    });
+
+    // 地圖點擊事件：點擊 map (非 marker 或 infoPanel)時關閉面板
+    map.addListener("click", () => {
+        const infoPanel = document.getElementById('infoPanel');
+        if (infoPanel.classList.contains('open')) {
+            closeInfoPanel();
+        }
+    });
+
+    // 確保地圖 zoom 不低於 16
+    google.maps.event.addListenerOnce(map, "idle", () => {
+        if (map.getZoom() < 16) {
+            map.setZoom(16);
+        }
+    });
+}
+
+function closeInfoPanel() {
+  const infoPanel = document.getElementById('infoPanel');
+  infoPanel.classList.remove('big');
+  infoPanel.classList.remove('open');
+  setTimeout(() => {
+    infoPanel.style.display = 'none';
+  }, 600);
+}
+
+function showTab(tab) {
+  const goBtn = document.getElementById('goBtn');
+  const backBtn = document.getElementById('backBtn');
+  const goContent = document.getElementById('goContent');
+  const backContent = document.getElementById('backContent');
+
+  if (tab === 'go') {
+    goBtn.classList.add('active');
+    backBtn.classList.remove('active');
+    goContent.style.display = 'block'; // 顯示去程內容
+    backContent.style.display = 'none'; // 隱藏回程內容
+  } else if (tab === 'back') {
+    goBtn.classList.remove('active');
+    backBtn.classList.add('active');
+    goContent.style.display = 'none'; // 隱藏去程內容
+    backContent.style.display = 'block'; // 顯示回程內容
+  }
+}
+
+function getDistance(lat1, lon1, lat2, lon2) {
+  const R = 6378137;
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+  const a = Math.sin(dLat / 2) ** 2 +
+            Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+            Math.sin(dLon / 2) ** 2;
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
+}
+
+async function handleNearestStops(userLat, userLng) {
+  console.log(`使用座標：lat=${userLat}, lng=${userLng}`);
+
+  if (userMarker) userMarker.setMap(null);
+  userMarker = new google.maps.Marker({
+    position: { lat: userLat, lng: userLng },
+    map: map,
+    title: "我的位置",
+    icon: {
+      path: google.maps.SymbolPath.FORWARD_CLOSED_ARROW,
+      fillColor: "#4285F4",
+      fillOpacity: 1,
+      strokeColor: "#FFFFFF",
+      strokeWeight: 2,
+      scale: 6,
+    },
+    zIndex: 9999,
+  });
+
+  try {
+    const response = await fetch("json/公車站座標.json");
+    const data = await response.json();
+    const stops = [];
+    for (const stationName in data) {
+      const stationData = data[stationName];
+      let coords = null;
+      if (stationData["去程"] && stationData["去程"]["經度"] && stationData["去程"]["緯度"]) {
+        coords = stationData["去程"];
+      } else if (stationData["回程"] && stationData["回程"]["經度"] && stationData["回程"]["緯度"]) {
+        coords = stationData["回程"];
+      } else {
+        console.warn(`站名 "${stationName}" 缺少經緯度資訊`);
+        continue;
+      }
+      const lat = parseFloat(coords["緯度"]);
+      const lng = parseFloat(coords["經度"]);
+      const dist = getDistance(userLat, userLng, lat, lng);
+      stops.push({ stationName, lat, lng, distance: dist, rawData: stationData });
+    }
+
+    stops.sort((a, b) => a.distance - b.distance);
+    const nearestFive = stops.slice(0, 5);
+    const bounds = new google.maps.LatLngBounds();
+    bounds.extend({ lat: userLat, lng: userLng });
+
+    nearestFive.forEach((stop) => {
+      const marker = new google.maps.Marker({
+        position: { lat: stop.lat, lng: stop.lng },
+        map: map,
+        icon: "http://maps.google.com/mapfiles/ms/icons/bus.png",
+      });
+
+      marker.addListener("click", async () => {
+        map.panTo(marker.getPosition());
+        const infoPanel = document.getElementById('infoPanel');
+        infoPanel.style.display = "block";
+        infoPanel.classList.remove('big');
+        void infoPanel.offsetWidth; // 強制 reflow
+        infoPanel.classList.add("open");
+
+        // 記錄開啟時間
+        panelOpenTime = Date.now();
+
+        document.getElementById('stationTitle').textContent = stop.stationName;
+        try {
+          const busData = await getBusArrivalTimes(stop.stationName);
+          await displayBusArrivalTimes(busData);
+        } catch (error) {
+          console.error("取得公車到站資料時發生錯誤：", error);
+          document.getElementById('goContent').innerHTML = "<p>無法取得去程資料</p>";
+          document.getElementById('backContent').innerHTML = "<p>無法取得回程資料</p>";
+        }
+        showTab('go');
+      });
+
+      bounds.extend({ lat: stop.lat, lng: stop.lng });
+    });
+
+    map.fitBounds(bounds);
+    google.maps.event.addListenerOnce(map, "idle", () => {
+      if (map.getZoom() < 16) {
+        map.setZoom(16);
+      }
+    });
+  } catch (error) {
+    console.error("載入或處理 JSON 時發生錯誤：", error);
+  }
+}
+
+function findNearestFiveStops() {
+  if (!navigator.geolocation) {
+    console.error("瀏覽器不支援 geolocation。");
+    return;
+  }
+  navigator.geolocation.getCurrentPosition(
+    (pos) => {
+      handleNearestStops(pos.coords.latitude, pos.coords.longitude);
+    },
+    (err) => {
+      console.error("無法取得使用者位置：", err);
+    },
+    { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+  );
+}
+
+async function getBusArrivalTimes(stationName) {
+  const clientId = 'niyangex-c9a03f8f-f658-4f40';
+  const clientSecret = 'f0067ed7-d17c-422f-8306-491a54480a14';
+
+  async function getAccessToken() {
+  // 若有尚未到期的 Token，就直接用
+  if (globalTDXToken && Date.now() < globalTokenExpireTime) {
+    return globalTDXToken;
+  }
+
+  // 否則，重新申請
+  const url = 'https://tdx.transportdata.tw/auth/realms/TDXConnect/protocol/openid-connect/token';
+  const params = new URLSearchParams();
+  params.append('grant_type', 'client_credentials');
+  params.append('client_id', clientId);
+  params.append('client_secret', clientSecret);
+
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: params.toString()
+  });
+  if (!response.ok) {
+    throw new Error("取得 TDX Token 失敗: HTTP " + response.status);
+  }
+  const data = await response.json();
+  if (!data.access_token) {
+    throw new Error("取得 TDX Token 失敗: " + JSON.stringify(data));
+  }
+
+  // 記錄 Token 與過期時間 (data.expires_in 單位是秒)
+  globalTDXToken = data.access_token;
+  const expiresInSec = data.expires_in || 1800; // 預設 30 分鐘
+  globalTokenExpireTime = Date.now() + expiresInSec * 1000;
+
+  return globalTDXToken;
+}
+
+
+  try {
+    const token = await getAccessToken();
+    const url = `https://tdx.transportdata.tw/api/basic/v2/Bus/EstimatedTimeOfArrival/City/Taichung` +
+      `?$filter=StopName/Zh_tw eq '${stationName}'&$format=JSON`;
+    const response = await fetch(url, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error("取得公車到站資料時發生錯誤：", error);
+    throw error;
+  }
+}
+
+async function getRouteInfo(routeName) {
+    if (!routeInfoData) {
+    console.error("尚未載入起點站終點站資料");
+    return null;
+  }
+
+  // 從 routeInfoData 中查找路線資訊
+  const routeInfo = routeInfoData[routeName];
+  if (!routeInfo) {
+    console.warn(`找不到路線 ${routeName} 的起點與終點資料`);
+    return null;
+  }
+
+  return {
+    DepartureStopNameZh: routeInfo["起點"],
+    DestinationStopNameZh: routeInfo["終點"]
+  };
+}
+
+
+/*************************************
+ * 只需覆蓋以下函式：displayBusArrivalTimes
+ *************************************/
+ async function displayBusArrivalTimes(busData) {
+  const goDiv = document.getElementById('goContent');
+  const backDiv = document.getElementById('backContent');
+  goDiv.innerHTML = "";
+  backDiv.innerHTML = "";
+
+  // 若無任何到站資料
+  if (!Array.isArray(busData) || busData.length === 0) {
+    goDiv.innerHTML = "<p>查無去程資料</p>";
+    backDiv.innerHTML = "<p>查無回程資料</p>";
+    return;
+  }
+
+  // 依「路線名稱」分組
+  const routeMap = new Map();
+  for (const item of busData) {
+    const rName = item.RouteName?.Zh_tw || "未知路線";
+    if (!routeMap.has(rName)) {
+      routeMap.set(rName, []);
+    }
+    routeMap.get(rName).push(item);
+  }
+
+  // 逐條路線分別處理
+  for (const [routeName, items] of routeMap.entries()) {
+    // 檢查該路線是否全部都「無預估時間」
+    const hasAnyTime = items.some(b => b.EstimateTime || b.EstimateTime === 0);
+    let routeInfo = null;
+
+    // 若有至少一筆有預估時間，才呼叫 getRouteInfo (減少呼叫次數)
+    if (hasAnyTime) {
+      // 先看快取
+      if (routeInfoCache.has(routeName)) {
+        routeInfo = routeInfoCache.get(routeName);
+      } else {
+        try {
+          routeInfo = await getRouteInfo(routeName);
+          routeInfoCache.set(routeName, routeInfo);
+        } catch (err) {
+          console.error("取得路線資訊失敗：", err);
+          // 若失敗，routeInfo 依舊是 null
+        }
+      }
+    }
+
+    // 取得起訖站名稱，若 routeInfo = null 就給「未知起點/終點」
+    const depName = routeInfo?.DepartureStopNameZh || "未知起點";
+    const destName = routeInfo?.DestinationStopNameZh || "未知終點";
+
+    // 分出去程 (Direction=0) 與回程 (Direction=1)
+    const goData = items.filter(b => b.Direction === 0);
+    const backData = items.filter(b => b.Direction === 1);
+
+    // 組合「去程」
+    let goHtml = "";
+    if (goData.length === 0) {
+      goHtml = `<p>【${routeName}】查無去程資料</p>`;
+    } else {
+      for (const bus of goData) {
+        const t = bus.EstimateTime;
+        // 預設「尚無預估時間」 => 該行文字灰色 & 不顯示終點站
+        let arrivalText = "尚無預估時間";
+        let styleColor = "gray";
+        let showDest = false;
+
+        if (t || t === 0) {
+          // 表示有預估時間
+          if (t <= 180) {
+            arrivalText = (t === 0) ? "正在進站" : "即將抵達";
+          } else {
+            arrivalText = `${Math.floor(t / 60)} 分鐘後`;
+          }
+          styleColor = "black";   // 有預估時間 => 用黑色
+          showDest = true;        // 顯示終點站
+        }
+
+        // 若 showDest=false => 不顯示終點站
+        if (!showDest) {
+          goHtml += `<p style="color:${styleColor};">路線 <b>${routeName}</b> - ${arrivalText}</p>`;
+        } else {
+          goHtml += `<p style="color:${styleColor};">路線 <b>${routeName}</b> 往 <b>${destName}</b> - ${arrivalText}</p>`;
+        }
+      }
+    }
+
+    // 組合「回程」
+    let backHtml = "";
+    if (backData.length === 0) {
+      backHtml = `<p>【${routeName}】查無回程資料</p>`;
+    } else {
+      for (const bus of backData) {
+        const t = bus.EstimateTime;
+        let arrivalText = "尚無預估時間";
+        let styleColor = "gray";
+        let showDep = false;
+
+        if (t || t === 0) {
+          if (t <= 180) {
+            arrivalText = (t === 0) ? "正在進站" : "即將抵達";
+          } else {
+            arrivalText = `${Math.floor(t / 60)} 分鐘後`;
+          }
+          styleColor = "black";
+          showDep = true;
+        }
+
+        if (!showDep) {
+          backHtml += `<p style="color:${styleColor};">路線 <b>${routeName}</b> - ${arrivalText}</p>`;
+        } else {
+          backHtml += `<p style="color:${styleColor};">路線 <b>${routeName}</b> 往 <b>${depName}</b> - ${arrivalText}</p>`;
+        }
+      }
+    }
+
+    document.getElementById('goContent').innerHTML += goHtml;
+    document.getElementById('backContent').innerHTML += backHtml;
+  }
+
+  // 若最終 goDiv / backDiv 都是空 => 顯示無資料
+  if (!goDiv.innerHTML) goDiv.innerHTML = "<p>查無去程資料</p>";
+  if (!backDiv.innerHTML) backDiv.innerHTML = "<p>查無回程資料</p>";
+}
+
+  </script>
+
+  <!-- 載入 Google Maps JavaScript API (替換成你的 API Key) -->
+  <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBJnEKvcG6N6KdtutVViDu6KjHxqIa6jBI&callback=initMap"
+    async defer>
     </script>
+
+    </script>
+
+    
 </body>
 
 </html>
